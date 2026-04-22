@@ -1,7 +1,7 @@
 # index.html
 สุขภาพรพ.
-```react
-import React, { useState, useEffect, useRef } from 'react';
+<html>
+<import React, { useState, useEffect, useRef } from 'react';
 import { 
   Home, Compass, ClipboardList, Trophy, User, 
   Camera, Plus, ChevronLeft, Search, CheckCircle, 
@@ -1427,4 +1427,4 @@ function LoadingScreen() {
 }
 
 
-```
+```>
