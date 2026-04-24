@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>VitalVibe</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+
+<!-- Firebase -->
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, addDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ========== CONFIG ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyA6pLMExFN2d7oVQKLldcB_ahB5-o4zw_E",
+  authDomain: "vitalvibe-c0306.firebaseapp.com",
+  projectId: "vitalvibe-c0306",
+  storageBucket: "vitalvibe-c0306.firebasestorage.app",
+  messagingSenderId: "18887442289",
+  appId: "1:18887442289:web:655ebb50976c911fec80d0"
+};
+const GEMINI_KEY = "AIzaSyATERpNYLv7zCO6_x3yhzWMjtbWy7c4Wiw";
+const ADMIN_PIN = "kira5642";
+const APP_ID = "vitalvibe-live-v11";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ========== HELPERS ==========
+const getTodayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const cleanEmail = (email) => email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+const resizeImage = (file, maxSize=600) => new Promise(resolve => {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let {width, height} = img;
+      if (width > height) { if (width > maxSize) { height *= maxSize/width; width = maxSize; } }
+      else { if (height > maxSize) { width *= maxSize/height; height = maxSize; } }
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.6));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+const analyzeFoodWithAI = async (base64Image) => {
+  const prompt = `คุณคือนักโภชนาการ AI วิเคราะห์ภาพอาหารนี้และตอบกลับเป็น JSON format เท่านั้น ห้ามมี markdown:
+{"name":"ชื่อเมนูอาหาร","calories":300,"sugar":"ต่ำ/ปานกลาง/สูง","sodium":"ต่ำ/ปานกลาง/สูง","fat":"ต่ำ/ปานกลาง/สูง","advice":"คำแนะนำสั้นๆ"}`;
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      contents:[{role:"user",parts:[{text:prompt},{inlineData:{mimeType:"image/jpeg",data:base64Image.split(',')[1]}}]}],
+      generationConfig:{responseMimeType:"application/json"}
+    })
+  });
+  const data = await res.json();
+  return JSON.parse(data.candidates[0].content.parts[0].text);
+};
+
+// ========== STATE ==========
+let STATE = {
+  user: null, missions: [], rewards: [], profiles: [], leaderboard: [],
+  userProgress: [], stats: {water:0, steps:0}, logs: [],
+  activeTab: 'home', activeMeal: 'lunch', showRewards: false,
+  isAnalyzing: false, aiResult: null, foodImage: null, foodName: '', foodNote: '',
+  filterCategory: 'ทั้งหมด', stepInput: '',
+  editMode: false, editName: '', editAvatar: '',
+  adminTab: 'users',
+  addMissionForm: null, addRewardForm: null,
+};
+let unsubscribers = [];
+
+// ========== INIT ==========
+signInAnonymously(auth);
+onAuthStateChanged(auth, async (firebaseUser) => {
+  if (!firebaseUser) return;
+  setupRealtimeListeners();
+  try {
+    const saved = localStorage.getItem('vv_uid_v10');
+    if (saved) {
+      const snap = await getDoc(doc(db,'artifacts',APP_ID,'public','data','profiles',saved));
+      if (snap.exists()) { STATE.user = snap.data(); render(); }
+    }
+  } catch(e){}
+  render();
+});
+
+function setupRealtimeListeners() {
+  const missionsRef = collection(db,'artifacts',APP_ID,'public','data','missions');
+  unsubscribers.push(onSnapshot(missionsRef, snap => {
+    const loaded = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if (loaded.length === 0) {
+      [{title:'ลาขาดหวาน 1 วัน',subtitle:'งดเครื่องดื่มและขนมหวาน',points:20,category:'เบาหวาน',maxPerDay:1,expiresAt:''},
+       {title:'เดิน 30 นาที',subtitle:'เดินออกกำลังกาย 30 นาที',points:30,category:'ความดัน',maxPerDay:1,expiresAt:''},
+       {title:'กินผักผลไม้ 5 สี',subtitle:'ทานผักผลไม้หลากหลาย',points:25,category:'หัวใจ',maxPerDay:3,expiresAt:''}
+      ].forEach(m => addDoc(missionsRef, m));
+    } else { STATE.missions = loaded; render(); }
+  }));
+
+  const rewardsRef = collection(db,'artifacts',APP_ID,'public','data','rewards');
+  unsubscribers.push(onSnapshot(rewardsRef, snap => {
+    const loaded = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if (loaded.length === 0) {
+      [{title:'คูปองตรวจสุขภาพ',points:5000,image:'🎟️',type:'physical'},
+       {title:'ชุดของขวัญสุขภาพ',points:3500,image:'🧺',type:'physical'},
+       {title:'แก้วน้ำเก็บอุณหภูมิ',points:1500,image:'🥤',type:'physical'},
+       {title:'กรอบโปรไฟล์พิเศษ',points:500,image:'🖼️',type:'virtual'},
+       {title:'ตราสัญลักษณ์ VIP',points:1000,image:'👑',type:'virtual'}
+      ].forEach(r => addDoc(rewardsRef, r));
+    } else { STATE.rewards = loaded; render(); }
+  }));
+
+  const profilesRef = collection(db,'artifacts',APP_ID,'public','data','profiles');
+  unsubscribers.push(onSnapshot(profilesRef, snap => {
+    STATE.profiles = snap.docs.map(d=>d.data());
+    STATE.leaderboard = STATE.profiles.filter(u=>u.role==='user').sort((a,b)=>b.points-a.points).map((u,i)=>({...u,rank:i+1}));
+    if (STATE.user) {
+      const updated = STATE.profiles.find(u=>u.uid===STATE.user.uid);
+      if (updated) STATE.user = updated;
+    }
+    render();
+  }));
+}
+
+function setupUserListeners(uid) {
+  const today = getTodayStr();
+  const statsRef = doc(db,'artifacts',APP_ID,'public','data',`stats_${uid}`,today);
+  unsubscribers.push(onSnapshot(statsRef, snap => {
+    if (snap.exists()) STATE.stats = snap.data();
+    else { STATE.stats = {water:0,steps:0}; setDoc(statsRef,{water:0,steps:0}); }
+    render();
+  }));
+
+  const progressRef = collection(db,'artifacts',APP_ID,'public','data',`progress_${uid}`);
+  unsubscribers.push(onSnapshot(progressRef, snap => {
+    STATE.userProgress = snap.docs.map(d=>d.data());
+    render();
+  }));
+
+  const logsRef = collection(db,'artifacts',APP_ID,'public','data',`logs_${uid}`);
+  unsubscribers.push(onSnapshot(logsRef, snap => {
+    STATE.logs = snap.docs.map(d=>({id:d.id,...d.data()})).filter(l=>l.date===today).sort((a,b)=>b.timestamp-a.timestamp);
+    render();
+  }));
+}
+
+// ========== AUTH ==========
+async function handleLogin(email, password) {
+  const eid = cleanEmail(email);
+  const authRef = doc(db,'artifacts',APP_ID,'public','data','auth',eid);
+  const snap = await getDoc(authRef);
+  if (!snap.exists()) { showToast('ไม่พบบัญชีนี้ กรุณาสมัครสมาชิก','error'); return; }
+  const authData = snap.data();
+  if (authData.password !== password) { showToast('รหัสผ่านไม่ถูกต้อง','error'); return; }
+  const pSnap = await getDoc(doc(db,'artifacts',APP_ID,'public','data','profiles',authData.uid));
+  if (pSnap.exists()) {
+    STATE.user = pSnap.data();
+    try { localStorage.setItem('vv_uid_v10', STATE.user.uid); } catch(e){}
+    if (STATE.user.role === 'user') setupUserListeners(STATE.user.uid);
+    showToast('เข้าสู่ระบบสำเร็จ! 🚀');
+    render();
+  }
+}
+
+async function handleRegister(email, password, name, isAdmin, adminPin) {
+  if (isAdmin && adminPin !== ADMIN_PIN) { showToast('รหัสลับแอดมินไม่ถูกต้อง!','error'); return; }
+  const eid = cleanEmail(email);
+  const authRef = doc(db,'artifacts',APP_ID,'public','data','auth',eid);
+  const snap = await getDoc(authRef);
+  if (snap.exists()) { showToast('อีเมลนี้ถูกใช้งานแล้ว','error'); return; }
+  const uid = 'USR_' + Date.now() + Math.random().toString(36).substring(2,8);
+  const role = isAdmin ? 'admin' : 'user';
+  const avatar = 'https://api.dicebear.com/7.x/notionists/svg?seed=' + encodeURIComponent(name);
+  await setDoc(authRef, {email:eid, password, uid, role});
+  const profile = {uid, name, role, points:0, level:1, avatar};
+  await setDoc(doc(db,'artifacts',APP_ID,'public','data','profiles',uid), profile);
+  STATE.user = profile;
+  try { localStorage.setItem('vv_uid_v10', uid); } catch(e){}
+  if (role === 'user') setupUserListeners(uid);
+  showToast('สร้างบัญชีสำเร็จ! 🎉');
+  render();
+}
+
+function handleLogout() {
+  showConfirm('คุณต้องการออกจากระบบหรือไม่?', () => {
+    STATE.user = null;
+    try { localStorage.removeItem('vv_uid_v10'); } catch(e){}
+    showToast('ออกจากระบบแล้ว');
+    render();
+  });
+}
+
+// ========== TOAST & DIALOGS ==========
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.innerHTML = `<div class="toast ${type==='error'?'toast-error':''}">${type==='error'?'⚠️':'✅'} ${msg}</div>`;
+  t.style.display='flex';
+  setTimeout(()=>{ t.style.display='none'; }, 3000);
+}
+
+function showConfirm(text, onConfirm) {
+  const el = document.getElementById('confirm-dialog');
+  document.getElementById('confirm-text').textContent = text;
+  el.style.display = 'flex';
+  document.getElementById('confirm-ok').onclick = () => { el.style.display='none'; onConfirm(); };
+  document.getElementById('confirm-cancel').onclick = () => { el.style.display='none'; };
+}
+
+function showPrompt(title, desc, defaultVal, onConfirm) {
+  const el = document.getElementById('prompt-dialog');
+  document.getElementById('prompt-title').textContent = title;
+  document.getElementById('prompt-desc').textContent = desc;
+  document.getElementById('prompt-input').value = defaultVal;
+  el.style.display = 'flex';
+  document.getElementById('prompt-ok').onclick = () => { el.style.display='none'; onConfirm(document.getElementById('prompt-input').value); };
+  document.getElementById('prompt-cancel').onclick = () => { el.style.display='none'; };
+}
+
+// ========== RENDER ==========
+function render() {
+  const root = document.getElementById('root');
+  if (!root) return;
+  if (!STATE.user) { root.innerHTML = renderAuth(); bindAuthEvents(); return; }
+  if (STATE.user.role === 'admin') { root.innerHTML = renderAdmin(); bindAdminEvents(); return; }
+  root.innerHTML = renderUser(); bindUserEvents();
+}
+
+// ========== AUTH SCREEN ==========
+function renderAuth() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-blob blob1"></div>
+    <div class="auth-blob blob2"></div>
+    <div class="auth-card">
+      <div class="logo-box">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      </div>
+      <h1 class="brand-title">VitalVibe</h1>
+      <p class="brand-sub">คอมมูนิตี้คนรักสุขภาพ 🌟</p>
+
+      <div class="tab-switch">
+        <button class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+        <button class="tab-btn" id="tab-register" onclick="switchAuthTab('register')">สมัครสมาชิก</button>
+      </div>
+
+      <div id="auth-form">
+        <div id="register-fields" style="display:none">
+          <input class="input-field" id="input-name" type="text" placeholder="ชื่อที่ใช้แสดงผล"/>
+        </div>
+        <input class="input-field" id="input-email" type="email" placeholder="อีเมล (E-mail)"/>
+        <input class="input-field" id="input-password" type="password" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)"/>
+        <div id="admin-check-wrap" style="display:none;text-align:center;margin:8px 0">
+          <label style="font-size:13px;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <input type="checkbox" id="admin-check" onchange="toggleAdminPin()"/> สมัครในฐานะผู้ดูแลระบบ
+          </label>
+        </div>
+        <div id="admin-pin-wrap" style="display:none">
+          <input class="input-field" id="input-admin-pin" type="password" placeholder="รหัสลับแอดมิน" style="border-color:#ff6b6b;background:#fff5f5"/>
+        </div>
+        <button class="btn-primary" id="auth-submit-btn">เข้าสู่ระบบ 🚀</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+let authMode = 'login';
+function bindAuthEvents() {
+  document.getElementById('auth-submit-btn').onclick = async () => {
+    const email = document.getElementById('input-email').value;
+    const password = document.getElementById('input-password').value;
+    if (!email || !password) { showToast('กรุณากรอกอีเมลและรหัสผ่าน','error'); return; }
+    if (authMode === 'login') {
+      await handleLogin(email, password);
+    } else {
+      const name = document.getElementById('input-name').value;
+      if (!name) { showToast('กรุณากรอกชื่อ','error'); return; }
+      const isAdmin = document.getElementById('admin-check').checked;
+      const adminPin = isAdmin ? document.getElementById('input-admin-pin').value : '';
+      await handleRegister(email, password, name, isAdmin, adminPin);
+    }
+  };
+}
+
+window.switchAuthTab = (mode) => {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-register').classList.toggle('active', mode==='register');
+  document.getElementById('register-fields').style.display = mode==='register' ? 'block' : 'none';
+  document.getElementById('admin-check-wrap').style.display = mode==='register' ? 'block' : 'none';
+  document.getElementById('auth-submit-btn').textContent = mode==='login' ? 'เข้าสู่ระบบ 🚀' : 'เริ่มใช้งานฟรี ✨';
+};
+window.toggleAdminPin = () => {
+  const show = document.getElementById('admin-check').checked;
+  document.getElementById('admin-pin-wrap').style.display = show ? 'block' : 'none';
+};
+
+// ========== ADMIN ==========
+function renderAdmin() {
+  return `
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <div><h1 class="admin-title">Admin Control</h1><p class="admin-sub">จัดการระบบทั้งหมด</p></div>
+      <button class="icon-btn" onclick="handleLogout()">🚪</button>
+    </div>
+    <div class="admin-body">
+      ${STATE.adminTab==='users' ? renderAdminUsers() : STATE.adminTab==='missions' ? renderAdminMissions() : renderAdminRewards()}
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item ${STATE.adminTab==='users'?'active':''}" onclick="setAdminTab('users')"><span class="nav-icon">👥</span><span>ผู้ใช้งาน</span></button>
+      <button class="nav-item ${STATE.adminTab==='missions'?'active':''}" onclick="setAdminTab('missions')"><span class="nav-icon">📋</span><span>ภารกิจ</span></button>
+      <button class="nav-item ${STATE.adminTab==='rewards'?'active':''}" onclick="setAdminTab('rewards')"><span class="nav-icon">🎁</span><span>รางวัล</span></button>
+    </nav>
+  </div>`;
+}
+
+function renderAdminUsers() {
+  return `<div class="section-title">จัดการผู้ใช้งาน (${STATE.leaderboard.length} คน)</div>
+  <div class="card-list">
+    ${STATE.leaderboard.length===0 ? '<p class="empty-state">ยังไม่มีผู้ใช้งาน</p>' :
+      STATE.leaderboard.map((u,i)=>`
+      <div class="user-row">
+        <span class="rank-num">${i+1}</span>
+        <img src="${u.avatar}" class="avatar-sm" onerror="this.src='https://api.dicebear.com/7.x/notionists/svg?seed=default'"/>
+        <div class="user-info"><b>${u.name}</b><span class="badge-lv">Lv.${u.level||1}</span></div>
+        <div class="pts-badge">${(u.points||0).toLocaleString()} pts</div>
+        <button class="icon-btn-sm green" onclick="editPoints('${u.uid}','${u.name}',${u.points||0})">✏️</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderAdminMissions() {
+  const form = STATE.addMissionForm;
+  return `<div class="section-header">
+    <div class="section-title">จัดการภารกิจ</div>
+    <button class="btn-add" onclick="toggleAddMission()">+ สร้างใหม่</button>
+  </div>
+  ${form ? `<div class="add-form">
+    <input class="input-field" id="m-title" placeholder="ชื่อภารกิจ" value="${form.title}"/>
+    <input class="input-field" id="m-sub" placeholder="คำอธิบาย" value="${form.subtitle}"/>
+    <div class="form-row">
+      <select class="input-field" id="m-cat">
+        <option ${form.category==='เบาหวาน'?'selected':''}>เบาหวาน</option>
+        <option ${form.category==='ความดัน'?'selected':''}>ความดัน</option>
+        <option ${form.category==='หัวใจ'?'selected':''}>หัวใจ</option>
+      </select>
+      <input class="input-field" id="m-pts" type="number" placeholder="แต้ม" value="${form.points}" style="width:80px"/>
+    </div>
+    <div class="form-row">
+      <input class="input-field" id="m-max" type="number" placeholder="ครั้ง/วัน" value="${form.maxPerDay}" style="width:100px"/>
+      <input class="input-field" id="m-exp" type="date" value="${form.expiresAt}" style="flex:1"/>
+    </div>
+    <button class="btn-primary" onclick="saveMission()">บันทึก</button>
+  </div>` : ''}
+  <div class="card-list">
+    ${STATE.missions.map(m=>`
+    <div class="mission-row">
+      <div>
+        <span class="cat-badge ${m.category==='เบาหวาน'?'red':m.category==='ความดัน'?'blue':'green'}">${m.category}</span>
+        <b>${m.title}</b>
+        <div class="mission-meta">🪙 ${m.points} pts &nbsp;|&nbsp; 🔁 ${m.maxPerDay||1}/วัน ${m.expiresAt?`&nbsp;|&nbsp; 📅 ${m.expiresAt}`:''}</div>
+      </div>
+      <button class="icon-btn-sm red" onclick="deleteMission('${m.id}')">🗑️</button>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderAdminRewards() {
+  const form = STATE.addRewardForm;
+  return `<div class="section-header">
+    <div class="section-title">จัดการของรางวัล</div>
+    <button class="btn-add orange" onclick="toggleAddReward()">+ เพิ่มใหม่</button>
+  </div>
+  ${form ? `<div class="add-form">
+    <input class="input-field" id="r-title" placeholder="ชื่อของรางวัล" value="${form.title}"/>
+    <div class="form-row">
+      <select class="input-field" id="r-type">
+        <option value="physical" ${form.type==='physical'?'selected':''}>ของจริง</option>
+        <option value="virtual" ${form.type==='virtual'?'selected':''}>ในเกม</option>
+      </select>
+      <input class="input-field" id="r-emoji" placeholder="Emoji" value="${form.image}" style="width:70px;text-align:center"/>
+    </div>
+    <input class="input-field" id="r-pts" type="number" placeholder="แต้มที่ใช้" value="${form.points}"/>
+    <button class="btn-primary" onclick="saveReward()">บันทึก</button>
+  </div>` : ''}
+  <div class="rewards-grid">
+    ${STATE.rewards.map(r=>`
+    <div class="reward-card">
+      <button class="reward-delete" onclick="deleteReward('${r.id}')">✕</button>
+      <div class="reward-emoji">${r.image}</div>
+      <div class="reward-name">${r.title}</div>
+      <div class="reward-pts">${r.points} pts</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function bindAdminEvents() {}
+window.setAdminTab = (tab) => { STATE.adminTab = tab; render(); };
+window.editPoints = (uid, name, pts) => {
+  showPrompt('แก้ไขคะแนน', `ผู้ใช้: ${name}`, pts, async (val) => {
+    if (!isNaN(val)) { await updateDoc(doc(db,'artifacts',APP_ID,'public','data','profiles',uid),{points:Number(val)}); showToast('อัปเดตคะแนนแล้ว'); }
+  });
+};
+window.toggleAddMission = () => { STATE.addMissionForm = STATE.addMissionForm ? null : {title:'',subtitle:'',category:'เบาหวาน',points:10,maxPerDay:1,expiresAt:''}; render(); };
+window.saveMission = async () => {
+  const title = document.getElementById('m-title').value;
+  if (!title) { showToast('กรุณากรอกชื่อ','error'); return; }
+  await addDoc(collection(db,'artifacts',APP_ID,'public','data','missions'),{
+    title, subtitle: document.getElementById('m-sub').value,
+    category: document.getElementById('m-cat').value,
+    points: Number(document.getElementById('m-pts').value),
+    maxPerDay: Number(document.getElementById('m-max').value)||1,
+    expiresAt: document.getElementById('m-exp').value,
+  });
+  STATE.addMissionForm = null; showToast('เพิ่มภารกิจแล้ว');
+};
+window.deleteMission = (id) => showConfirm('ลบภารกิจนี้?', async () => { await deleteDoc(doc(db,'artifacts',APP_ID,'public','data','missions',id)); showToast('ลบแล้ว'); });
+window.toggleAddReward = () => { STATE.addRewardForm = STATE.addRewardForm ? null : {title:'',points:500,image:'🎁',type:'physical'}; render(); };
+window.saveReward = async () => {
+  const title = document.getElementById('r-title').value;
+  if (!title) { showToast('กรุณากรอกชื่อ','error'); return; }
+  await addDoc(collection(db,'artifacts',APP_ID,'public','data','rewards'),{
+    title, points: Number(document.getElementById('r-pts').value),
+    image: document.getElementById('r-emoji').value,
+    type: document.getElementById('r-type').value,
+  });
+  STATE.addRewardForm = null; showToast('เพิ่มรางวัลแล้ว');
+};
+window.deleteReward = (id) => showConfirm('ลบรางวัลนี้?', async () => { await deleteDoc(doc(db,'artifacts',APP_ID,'public','data','rewards',id)); showToast('ลบแล้ว'); });
+
+// ========== USER APP ==========
+function renderUser() {
+  const u = STATE.user;
+  let content = '';
+  if (STATE.showRewards) content = renderRewardsPage();
+  else if (STATE.activeTab==='home') content = renderHome();
+  else if (STATE.activeTab==='missions') content = renderMissions();
+  else if (STATE.activeTab==='log') content = renderFoodLog();
+  else if (STATE.activeTab==='leaderboard') content = renderLeaderboard();
+  else if (STATE.activeTab==='profile') content = renderProfile();
+
+  return `
+  <div class="user-wrap">
+    <div class="user-body">${content}</div>
+    ${STATE.showRewards ? '' : `
+    <nav class="bottom-nav">
+      <button class="nav-item ${STATE.activeTab==='home'?'active orange':''}" onclick="setTab('home')"><span class="nav-icon">🏠</span><span>หน้าแรก</span></button>
+      <button class="nav-item ${STATE.activeTab==='missions'?'active teal':''}" onclick="setTab('missions')"><span class="nav-icon">🎯</span><span>ภารกิจ</span></button>
+      <button class="nav-item ${STATE.activeTab==='log'?'active rose':''}" onclick="setTab('log')"><span class="nav-icon">🥗</span><span>บันทึก</span></button>
+      <button class="nav-item ${STATE.activeTab==='leaderboard'?'active yellow':''}" onclick="setTab('leaderboard')"><span class="nav-icon">🏆</span><span>อันดับ</span></button>
+      <button class="nav-item ${STATE.activeTab==='profile'?'active emerald':''}" onclick="setTab('profile')"><span class="nav-icon">👤</span><span>โปรไฟล์</span></button>
+    </nav>`}
+  </div>`;
+}
+
+function renderHome() {
+  const u = STATE.user;
+  const s = STATE.stats;
+  const waterPct = Math.min(100, (s.water/8)*100);
+  const stepPct = Math.min(100, (s.steps/10000)*100);
+  const wd = 251.2 - (waterPct/100)*251.2;
+  const sd = 251.2 - (stepPct/100)*251.2;
+  return `
+  <div class="page-pad">
+    <div class="profile-row">
+      <img src="${u.avatar}" class="avatar-md" onerror="this.src='https://api.dicebear.com/7.x/notionists/svg?seed=default'"/>
+      <div><h2 class="greeting">${u.name}</h2><p class="greeting-sub">พร้อมลุยเป้าหมายวันนี้แล้วยัง? 🔥</p></div>
+    </div>
+
+    <div class="points-card">
+      <div class="points-label">ระดับ ${u.level||1} <span style="opacity:.7;font-weight:600;font-size:14px">(สุขภาพดี)</span></div>
+      <div class="xp-bar"><div class="xp-fill" style="width:40%"></div></div>
+      <div class="points-row"><span class="coin">🪙</span><span class="points-num">${(u.points||0).toLocaleString()}</span><span class="points-unit">แต้ม</span></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">💧 ดื่มน้ำ (แก้ว)</div>
+        <div class="ring-wrap">
+          <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg)">
+            <circle cx="48" cy="48" r="40" fill="none" stroke="#e0f7fa" stroke-width="8"/>
+            <circle cx="48" cy="48" r="40" fill="none" stroke="#34A0A4" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="${wd}" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
+          </svg>
+          <div class="ring-label" style="color:#34A0A4">${s.water}<span style="font-size:12px;color:#aaa">/8</span></div>
+        </div>
+        <button class="fab-btn teal" onclick="addWater()">+</button>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">👟 ก้าวเดิน</div>
+        <div class="ring-wrap">
+          <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg)">
+            <circle cx="48" cy="48" r="40" fill="none" stroke="#ffe0e6" stroke-width="8"/>
+            <circle cx="48" cy="48" r="40" fill="none" stroke="#f43f5e" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="${sd}" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
+          </svg>
+          <div class="ring-label" style="color:#f43f5e;font-size:16px">${s.steps.toLocaleString()}<span style="font-size:10px;color:#aaa">/10k</span></div>
+        </div>
+        <div class="step-input-row">
+          <input id="step-input" class="step-input" type="number" placeholder="+ก้าว" value="${STATE.stepInput}"/>
+          <button class="fab-btn rose" onclick="addSteps()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-meal" onclick="setTab('log')">🥗 บันทึกมื้ออาหารวันนี้</button>
+  </div>`;
+}
+
+function renderMissions() {
+  const today = getTodayStr();
+  const filters = ['ทั้งหมด','เบาหวาน','ความดัน','หัวใจ'];
+  const valid = STATE.missions.filter(m => {
+    if (m.expiresAt && m.expiresAt < today) return false;
+    if (STATE.filterCategory !== 'ทั้งหมด' && m.category !== STATE.filterCategory) return false;
+    return true;
+  });
+  return `
+  <div class="page-pad">
+    <h1 class="page-title">ภารกิจสุขภาพ 🎯</h1>
+    <input type="file" id="mission-file" accept="image/*" capture="environment" style="display:none" onchange="handleMissionPhoto(event)"/>
+    <div class="filter-row">
+      ${filters.map(f=>`<button class="filter-btn ${STATE.filterCategory===f?'active':''}" onclick="setFilter('${f}')">${f}</button>`).join('')}
+    </div>
+    <div class="card-list">
+      ${valid.length===0 ? '<p class="empty-state">ยังไม่มีภารกิจหมวดนี้</p>' : valid.map(m => {
+        const done = STATE.userProgress.filter(p=>p.missionId===m.id&&p.date===today).length;
+        const max = m.maxPerDay||1;
+        const completed = done >= max;
+        const icons = {เบาหวาน:'🚫',ความดัน:'👟',หัวใจ:'🥗'};
+        const colors = {เบาหวาน:'#fee2e2',ความดัน:'#dbeafe',หัวใจ:'#d1fae5'};
+        return `
+        <div class="mission-card ${completed?'done':''}">
+          <div class="mission-icon" style="background:${colors[m.category]||'#f3f4f6'}">${icons[m.category]||'📝'}</div>
+          <div class="mission-content">
+            <div class="mission-title ${completed?'strikethrough':''}">${m.title}</div>
+            <div class="mission-sub">${m.subtitle||''}</div>
+            <div class="mission-footer">
+              <span class="pts-tag">🪙 +${m.points} pts <span class="done-count">${done}/${max}</span></span>
+              ${completed
+                ? '<span class="done-badge">✅ สำเร็จแล้ว</span>'
+                : `<button class="btn-verify" onclick="startMission('${m.id}')">📷 ยืนยันภาพ</button>`}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderFoodLog() {
+  const mealTabs = [{id:'morning',label:'เช้า',icon:'☀️'},{id:'lunch',label:'กลางวัน',icon:'🍴'},{id:'dinner',label:'เย็น',icon:'🌙'},{id:'snack',label:'ว่าง',icon:'🍎'}];
+  const ai = STATE.aiResult;
+  return `
+  <div>
+    <div class="food-header">
+      <h1 class="page-title" style="margin:0">บันทึกอาหารด้วย AI 🤖</h1>
+    </div>
+    <div class="meal-tabs">
+      ${mealTabs.map(t=>`<button class="meal-tab ${STATE.activeMeal===t.id?'active':''}" onclick="setMeal('${t.id}')">${t.icon} ${t.label}</button>`).join('')}
+    </div>
+    <div class="page-pad" style="padding-top:12px">
+      <input type="file" id="food-file" accept="image/*" style="display:none" onchange="handleFoodPhoto(event)"/>
+      <div class="photo-zone ${STATE.foodImage?'has-image':''}" onclick="document.getElementById('food-file').click()">
+        ${STATE.isAnalyzing
+          ? '<div class="analyzing">✨ AI กำลังวิเคราะห์...</div>'
+          : STATE.foodImage
+            ? `<img src="${STATE.foodImage}" style="width:100%;height:100%;object-fit:cover;border-radius:20px"/>`
+            : '<div class="photo-placeholder"><div class="camera-icon">📷</div><div style="font-weight:800;color:#f43f5e;font-size:18px">ถ่ายรูปให้ AI วิเคราะห์</div><div style="font-size:12px;color:#aaa;margin-top:4px">แคลอรี่ หวาน เค็ม ประเมินอัตโนมัติ</div></div>'}
+      </div>
+
+      ${ai ? `<div class="ai-result">
+        <div style="font-weight:800;margin-bottom:12px">✨ ผลวิเคราะห์ AI:</div>
+        <div class="ai-grid">
+          <div class="ai-item"><div class="ai-val" style="color:#f43f5e">${ai.calories}</div><div class="ai-key">แคลอรี่</div></div>
+          <div class="ai-item"><div class="ai-val ${ai.sugar==='สูง'?'red':'green'}">${ai.sugar}</div><div class="ai-key">ความหวาน</div></div>
+          <div class="ai-item"><div class="ai-val ${ai.sodium==='สูง'?'red':'green'}">${ai.sodium}</div><div class="ai-key">ความเค็ม</div></div>
+        </div>
+        <div class="ai-advice">"${ai.advice}"</div>
+      </div>` : ''}
+
+      <input class="input-field" id="food-name" placeholder="ชื่อเมนูอาหาร" value="${STATE.foodName}" oninput="STATE.foodName=this.value"/>
+      <textarea class="input-field" id="food-note" placeholder="พฤติกรรมการปรุง เช่น ไม่ใส่น้ำตาล" rows="2" style="resize:none">${STATE.foodNote}</textarea>
+
+```
+  <button class="btn-primary rose" onclick="saveMeal()">💾 บันทึกมื้อนี้</button>
+
+  ${STATE.logs.length > 0 ? `
+  <h3 style="font-weight:800;margin:20px 0 12px">ประวัติวันนี้</h3>
+  <div class="log-list">
+    ${STATE.logs.map(log=>`
+    <div class="log-item">
+      <div class="log-img">${log.image?`<img src="${log.image}" style="width:100%;height:100%;object-fit:cover;border-radius:12px"/>`:'🍽️'}</div>
+      <div>
+        <div style="font-weight:800">${log.name}</div>
+        ${log.ai_data?`<div style="font-size:11px;color:#f97316;background:#fff7ed;padding:2px 8px;border-radius:6px;display:inline-block;margin-top:4px">🔥 ${log.ai_data.calories} kcal</div>`:''}
+      </div>
+    </div>`).join('')}
+  </div>` : ''}
+</div>
+```
+
+  </div>`;
+}
+
+function renderLeaderboard() {
+const me = STATE.leaderboard.find(u=>u.uid===STATE.user.uid);
+return `
+
+  <div class="lb-wrap">
+    <div class="lb-bg-blob b1"></div>
+    <div class="lb-bg-blob b2"></div>
+    <div style="text-align:center;padding:48px 20px 24px;position:relative;z-index:1">
+      <h1 style="font-size:40px;font-weight:900;color:#111;margin:0">Leaderboard</h1>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:white;padding:8px 20px;border-radius:50px;margin-top:12px;box-shadow:0 2px 10px rgba(0,0,0,.07)">
+        <span style="animation:pulse 2s infinite">🏆</span>
+        <span style="font-weight:700;font-size:13px;color:#666">อัปเดตจากผู้ใช้งานจริง</span>
+      </div>
+    </div>
+    <div style="padding:0 16px;position:relative;z-index:1;display:flex;flex-direction:column;gap:12px">
+      ${STATE.leaderboard.slice(0,10).map(u=>`
+      <div class="lb-row ${u.uid===STATE.user.uid?'lb-me':''}">
+        ${u.rank<=3?`<div class="lb-bar rank${u.rank}"></div>`:''}
+        <div class="lb-rank">${u.rank<=3?['🥇','🥈','🥉'][u.rank-1]:u.rank}</div>
+        <img src="${u.avatar}" class="lb-avatar" onerror="this.src='https://api.dicebear.com/7.x/notionists/svg?seed=default'"/>
+        <div class="lb-info">
+          <div class="lb-name">${u.name} ${u.uid===STATE.user.uid?'<span class="you-badge">คุณ</span>':''}</div>
+          <div class="lb-pts">${(u.points||0).toLocaleString()} pts</div>
+        </div>
+      </div>`).join('')}
+      ${STATE.leaderboard.length===0?'<p class="empty-state">ยังไม่มีผู้ใช้งาน</p>':''}
+    </div>
+    <div style="height:120px"></div>
+    ${me ? `<div class="my-rank-card">
+      <img src="${me.avatar}" class="lb-avatar" onerror="this.src='https://api.dicebear.com/7.x/notionists/svg?seed=default'"/>
+      <div>
+        <div style="font-size:11px;color:#93c5fd;font-weight:700;text-transform:uppercase">อันดับของคุณ</div>
+        <div style="font-size:28px;font-weight:900;color:white"># ${me.rank}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:11px;color:#93c5fd;font-weight:700;text-transform:uppercase">คะแนนรวม</div>
+        <div style="font-size:24px;font-weight:900;color:#fde68a">${(me.points||0).toLocaleString()}</div>
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+
+function renderProfile() {
+const u = STATE.user;
+return `
+
+  <div class="page-pad">
+    <div class="profile-card">
+      <img src="${u.avatar}" class="avatar-lg" onerror="this.src='https://api.dicebear.com/7.x/notionists/svg?seed=default'"/>
+      <h2 style="font-size:28px;font-weight:900;color:#111;margin:12px 0 4px">${u.name}</h2>
+      <div class="lv-badge">⭐ Level ${u.level||1} Explorer</div>
+      <button class="btn-edit" onclick="openEditProfile()">✏️ แก้ไขโปรไฟล์</button>
+    </div>
+
+```
+${STATE.editMode ? `
+<div class="edit-overlay">
+  <div class="edit-modal">
+    <button class="close-btn" onclick="closeEdit()">✕</button>
+    <h3 style="font-weight:900;font-size:24px;text-align:center;margin-bottom:24px">แก้ไขข้อมูล</h3>
+    <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="handleAvatarChange(event)"/>
+    <div class="avatar-edit-wrap" onclick="document.getElementById('avatar-file').click()">
+      <img id="edit-avatar-preview" src="${STATE.editAvatar||u.avatar}" class="avatar-lg" onerror="this.src='https://api.dicebear.com/7.x/notionists/svg?seed=default'"/>
+      <div class="avatar-overlay">📷</div>
+    </div>
+    <input class="input-field" id="edit-name-input" type="text" value="${STATE.editName||u.name}" placeholder="ชื่อแสดงผล"/>
+    <button class="btn-primary" onclick="saveProfile()">💾 บันทึก</button>
+  </div>
+</div>` : ''}
+
+<div class="weekly-card">
+  <h3 style="font-weight:800;margin-bottom:16px">📊 สรุปรายสัปดาห์ (AI)</h3>
+  <div class="eval-row">
+    <div class="eval-item"><div style="font-size:32px">🍬</div><div style="font-weight:700">ลดหวาน</div><div class="stars">${'⭐'.repeat(4)}${'☆'.repeat(1)}</div></div>
+    <div class="eval-item"><div style="font-size:32px">🧂</div><div style="font-weight:700">ลดเค็ม</div><div class="stars">${'⭐'.repeat(5)}</div></div>
+    <div class="eval-item"><div style="font-size:32px">💧</div><div style="font-weight:700">ลดมัน</div><div class="stars">${'⭐'.repeat(3)}${'☆'.repeat(2)}</div></div>
+  </div>
+  <div class="ai-advice" style="margin-top:16px">"สัปดาห์นี้ลดเค็มได้เยี่ยม! รักษาระดับนี้นะครับ 👏"</div>
+</div>
+
+<div class="badges-card">
+  <h3 style="font-weight:800;margin-bottom:16px">🏅 รางวัลความสำเร็จ</h3>
+  <div class="badges-row">
+    <div class="badge-item"><div class="badge-icon" style="background:#dbeafe">🛡️</div><div class="badge-name">นักลดเค็มมือโปร</div></div>
+    <div class="badge-item"><div class="badge-icon" style="background:#d1fae5">🏅</div><div class="badge-name">พิชิต 7 วัน</div></div>
+    <div class="badge-item locked"><div class="badge-icon" style="background:#f3f4f6">🏃</div><div class="badge-name">แสนก้าว</div></div>
+  </div>
+</div>
+
+<button class="btn-rewards" onclick="STATE.showRewards=true;render()">🎁 ร้านค้าแลกของรางวัล</button>
+<button class="btn-logout" onclick="handleLogout()">🚪 ออกจากระบบ</button>
+```
+
+  </div>`;
+}
+
+function renderRewardsPage() {
+const tab = STATE.rewardsTab || ‘virtual’;
+const list = STATE.rewards.filter(r=>r.type===tab);
+return `
+
+  <div style="height:100%;display:flex;flex-direction:column">
+    <div class="rewards-header">
+      <button class="back-btn" onclick="STATE.showRewards=false;render()">←</button>
+      <h1 style="font-weight:900;font-size:20px;margin:0">แลกของรางวัล</h1>
+    </div>
+    <div style="text-align:center;padding:24px;background:white;border-bottom:1px solid #f0f0f0">
+      <div style="color:#888;font-weight:700;font-size:12px;text-transform:uppercase;margin-bottom:8px">คะแนนคงเหลือ</div>
+      <div style="font-size:52px;font-weight:900;color:#111">🪙 ${(STATE.user.points||0).toLocaleString()}</div>
+    </div>
+    <div style="display:flex;gap:4px;margin:16px;background:#f5f5f5;padding:4px;border-radius:14px">
+      <button class="tab-btn ${tab==='virtual'?'active':''}" onclick="STATE.rewardsTab='virtual';render()">ในเกม (Virtual)</button>
+      <button class="tab-btn ${tab==='physical'?'active':''}" onclick="STATE.rewardsTab='physical';render()">ของจริง (Physical)</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 16px 80px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start">
+      ${list.length===0 ? '<p class="empty-state" style="grid-column:1/-1">ยังไม่มีรางวัลหมวดนี้</p>' :
+        list.map(r=>`
+        <div class="reward-big-card">
+          <div style="font-size:52px;margin:8px 0">${r.image}</div>
+          <div style="font-weight:800;font-size:13px;margin-bottom:auto">${r.title}</div>
+          <button class="redeem-btn" onclick="redeemReward('${r.id}','${r.title}','${r.image}',${r.points})">แลกเลย ${r.points.toLocaleString()}</button>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function bindUserEvents() {}
+window.setTab = (tab) => { STATE.activeTab = tab; render(); };
+window.addWater = async () => {
+if (STATE.stats.water >= 8) { showToast(‘ดื่มน้ำครบ 8 แก้วแล้ว! 💧’); return; }
+const today = getTodayStr();
+await updateDoc(doc(db,‘artifacts’,APP_ID,‘public’,‘data’,`stats_${STATE.user.uid}`,today),{water: STATE.stats.water+1});
+};
+window.addSteps = async () => {
+const v = parseInt(document.getElementById(‘step-input’)?.value||0);
+if (!v||v<=0) return;
+const today = getTodayStr();
+await updateDoc(doc(db,‘artifacts’,APP_ID,‘public’,‘data’,`stats_${STATE.user.uid}`,today),{steps: STATE.stats.steps+v});
+STATE.stepInput = ‘’;
+};
+window.setFilter = (f) => { STATE.filterCategory = f; render(); };
+window.setMeal = (m) => { STATE.activeMeal = m; render(); };
+
+let pendingMissionId = null;
+window.startMission = (id) => {
+pendingMissionId = id;
+document.getElementById(‘mission-file’).click();
+};
+window.handleMissionPhoto = async (e) => {
+const file = e.target.files[0];
+if (!file || !pendingMissionId) return;
+const mission = STATE.missions.find(m=>m.id===pendingMissionId);
+if (!mission) return;
+const today = getTodayStr();
+const done = STATE.userProgress.filter(p=>p.missionId===mission.id&&p.date===today).length;
+if (done >= (mission.maxPerDay||1)) { showToast(‘ทำครบโควต้าแล้ว!’,‘error’); return; }
+showToast(‘AI กำลังตรวจสอบ… รอสักครู่’);
+const base64 = await resizeImage(file);
+setTimeout(async () => {
+await addDoc(collection(db,‘artifacts’,APP_ID,‘public’,‘data’,`progress_${STATE.user.uid}`),{missionId:mission.id,date:today,timestamp:Date.now(),image:base64});
+await updateDoc(doc(db,‘artifacts’,APP_ID,‘public’,‘data’,‘profiles’,STATE.user.uid),{points:(STATE.user.points||0)+mission.points});
+showToast(`ยืนยันสำเร็จ! ได้รับ ${mission.points} แต้ม 🎉`);
+e.target.value=’’; pendingMissionId=null;
+}, 2000);
+};
+
+window.handleFoodPhoto = async (e) => {
+const file = e.target.files[0];
+if (!file) return;
+STATE.isAnalyzing = true; STATE.aiResult = null; STATE.foodImage = null; render();
+try {
+const base64 = await resizeImage(file);
+STATE.foodImage = base64;
+const analysis = await analyzeFoodWithAI(base64);
+STATE.aiResult = analysis;
+STATE.foodName = analysis.name !== ‘ไม่พบอาหาร’ ? analysis.name : ‘’;
+} catch(err) { showToast(‘AI ขัดข้อง กรอกข้อมูลเองได้เลย’,‘error’); }
+STATE.isAnalyzing = false; render();
+};
+
+window.saveMeal = async () => {
+const name = document.getElementById(‘food-name’)?.value || STATE.foodName;
+const note = document.getElementById(‘food-note’)?.value || STATE.foodNote;
+if (!name && !STATE.foodImage) { showToast(‘กรุณาระบุชื่ออาหารหรือถ่ายรูป’,‘error’); return; }
+await addDoc(collection(db,‘artifacts’,APP_ID,‘public’,‘data’,`logs_${STATE.user.uid}`),{
+meal: STATE.activeMeal, name: name||‘เมนูระบุไม่ได้’, note,
+image: STATE.foodImage, ai_data: STATE.aiResult||null,
+date: getTodayStr(), timestamp: Date.now()
+});
+STATE.foodName=’’; STATE.foodNote=’’; STATE.foodImage=null; STATE.aiResult=null;
+showToast(‘บันทึกมื้ออาหารสำเร็จ! 🥗’);
+};
+
+window.openEditProfile = () => { STATE.editMode=true; STATE.editName=STATE.user.name; STATE.editAvatar=STATE.user.avatar; render(); };
+window.closeEdit = () => { STATE.editMode=false; render(); };
+window.handleAvatarChange = async (e) => {
+const file = e.target.files[0];
+if (file) { const b64 = await resizeImage(file,200); STATE.editAvatar=b64; document.getElementById(‘edit-avatar-preview’).src=b64; }
+};
+window.saveProfile = async () => {
+const name = document.getElementById(‘edit-name-input’)?.value;
+if (!name) { showToast(‘กรุณาใส่ชื่อ’,‘error’); return; }
+await updateDoc(doc(db,‘artifacts’,APP_ID,‘public’,‘data’,‘profiles’,STATE.user.uid),{name, avatar: STATE.editAvatar||STATE.user.avatar});
+STATE.editMode=false; showToast(‘อัปเดตโปรไฟล์แล้ว! 🌟’);
+};
+
+window.redeemReward = (id, title, image, points) => {
+if ((STATE.user.points||0) < points) { showToast(‘คะแนนไม่พอ!’,‘error’); return; }
+showConfirm(`ยืนยันแลก "${title}" ด้วย ${points} แต้ม?`, async () => {
+await updateDoc(doc(db,‘artifacts’,APP_ID,‘public’,‘data’,‘profiles’,STATE.user.uid),{points:(STATE.user.points||0)-points});
+document.getElementById(‘success-modal’).style.display=‘flex’;
+document.getElementById(‘success-title’).textContent=`${image} ${title}`;
+STATE.showRewards=false;
+});
+};
+window.handleLogout = handleLogout;
+
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Kanit',sans-serif;background:#1a1a2e;height:100vh;display:flex;justify-content:center;align-items:center;overflow:hidden}
+#root{width:100%;max-width:430px;height:100vh;background:white;position:relative;overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.5)}
+
+/* TOAST */
+#toast{display:none;position:absolute;top:40px;left:50%;transform:translateX(-50%);z-index:9999;width:90%;justify-content:center}
+.toast{background:#111;color:white;padding:12px 24px;border-radius:50px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.toast-error{background:#ef4444}
+
+/* DIALOGS */
+.dialog-overlay{display:none;position:absolute;inset:0;z-index:1000;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);justify-content:center;align-items:center;padding:24px}
+.dialog-box{background:white;border-radius:28px;padding:32px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dialog-title{font-size:20px;font-weight:900;color:#111;margin-bottom:24px;line-height:1.4}
+.dialog-btns{display:flex;gap:12px}
+.dialog-btns button{flex:1;padding:14px;border-radius:16px;font-family:inherit;font-size:16px;font-weight:800;border:none;cursor:pointer}
+.btn-cancel{background:#f3f4f6;color:#666}
+.btn-confirm{background:#ef4444;color:white;box-shadow:0 8px 20px rgba(239,68,68,.3)}
+
+/* AUTH */
+.auth-screen{height:100vh;width:100%;background:linear-gradient(135deg,#FF9A9E,#FECFEF,#A1C4FD);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;position:relative}
+.auth-blob{position:absolute;border-radius:50%;filter:blur(40px);opacity:.5;pointer-events:none}
+.blob1{width:200px;height:200px;background:#fbbf24;top:-50px;left:-50px}
+.blob2{width:200px;height:200px;background:#60a5fa;bottom:50px;right:-50px}
+.auth-card{background:rgba(255,255,255,.97);border-radius:40px;padding:32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.1);position:relative;z-index:1}
+.logo-box{width:88px;height:88px;background:linear-gradient(135deg,#FF7A00,#FF004D);border-radius:28px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 15px 30px rgba(255,0,77,.3);transform:rotate(3deg)}
+.brand-title{font-size:36px;font-weight:900;background:linear-gradient(135deg,#FF7A00,#FF004D);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:4px}
+.brand-sub{text-align:center;color:#888;font-weight:600;margin-bottom:24px}
+.tab-switch{display:flex;background:#f3f4f6;padding:6px;border-radius:16px;margin-bottom:20px}
+.tab-btn{flex:1;padding:12px;border:none;background:transparent;border-radius:12px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;color:#aaa;transition:.2s}
+.tab-btn.active{background:white;color:#FF004D;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.input-field{width:100%;background:#f8f9fa;border:2px solid transparent;border-radius:16px;padding:14px 16px;font-family:inherit;font-size:15px;font-weight:600;color:#333;outline:none;margin-bottom:12px;transition:.2s}
+.input-field:focus{border-color:#FF7A00}
+.btn-primary{width:100%;background:linear-gradient(135deg,#FF7A00,#FF004D);color:white;border:none;border-radius:16px;padding:16px;font-family:inherit;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 10px 30px rgba(255,0,77,.35);transition:.15s;margin-top:4px}
+.btn-primary:active{transform:scale(.97)}
+.btn-primary.rose{background:linear-gradient(135deg,#f43f5e,#fb923c)}
+.btn-primary.teal{background:linear-gradient(135deg,#34A0A4,#0ea5e9)}
+
+/* ADMIN */
+.admin-wrap{height:100vh;display:flex;flex-direction:column;background:#f8fafb}
+.admin-header{background:#111827;color:white;padding:48px 24px 24px;border-radius:0 0 32px 32px}
+.admin-title{font-size:24px;font-weight:900;background:linear-gradient(135deg,#34d399,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.admin-sub{font-size:13px;color:#6b7280;margin-top:4px;font-weight:600}
+.admin-body{flex:1;overflow-y:auto;padding:20px 16px 100px}
+.section-title{font-size:22px;font-weight:900;color:#111;margin-bottom:16px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.card-list{display:flex;flex-direction:column;gap:10px}
+.user-row{background:white;border-radius:20px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.rank-num{width:24px;text-align:center;color:#ccc;font-weight:900;font-size:18px}
+.avatar-sm{width:44px;height:44px;border-radius:12px;object-fit:cover}
+.avatar-md{width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.avatar-lg{width:100px;height:100px;border-radius:50%;object-fit:cover;border:4px solid white;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.user-info{flex:1}.user-info b{display:block;font-weight:800;font-size:15px;color:#111}
+.badge-lv{font-size:11px;font-weight:800;color:#10b981;background:#d1fae5;padding:2px 8px;border-radius:50px}
+.pts-badge{font-weight:900;font-size:16px;color:#3b82f6}
+.icon-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:8px;border-radius:12px}
+.icon-btn-sm{width:36px;height:36px;border:none;border-radius:12px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.icon-btn-sm.green{background:#d1fae5;color:#10b981}
+.icon-btn-sm.red{background:#fee2e2;color:#ef4444}
+.btn-add{background:#10b981;color:white;border:none;padding:10px 20px;border-radius:14px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,.3)}
+.btn-add.orange{background:#f97316;box-shadow:0 4px 12px rgba(249,115,22,.3)}
+.add-form{background:white;border-radius:24px;padding:20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);border:2px solid #d1fae5}
+.form-row{display:flex;gap:8px}
+.mission-row{background:white;border-radius:20px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.05);display:flex;justify-content:space-between;align-items:center}
+.cat-badge{font-size:11px;font-weight:900;padding:3px 10px;border-radius:50px;color:white;display:inline-block;margin-bottom:4px}
+.cat-badge.red{background:#ef4444}.cat-badge.blue{background:#3b82f6}.cat-badge.green{background:#10b981}
+.mission-meta{font-size:12px;color:#9ca3af;margin-top:4px;font-weight:600}
+.rewards-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.reward-card{background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05);position:relative}
+.reward-emoji{font-size:40px;margin-bottom:8px}
+.reward-name{font-weight:800;font-size:14px;color:#111}
+.reward-pts{font-weight:900;font-size:12px;color:#f97316;background:#fff7ed;padding:4px 12px;border-radius:50px;margin-top:6px;display:inline-block}
+.reward-delete{position:absolute;top:8px;right:8px;background:#f3f4f6;border:none;width:24px;height:24px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* USER */
+.user-wrap{height:100vh;display:flex;flex-direction:column;background:#f4f7f6}
+.user-body{flex:1;overflow-y:auto;padding-bottom:80px}
+.bottom-nav{position:absolute;bottom:0;width:100%;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-top:1px solid #f0f0f0;display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:20}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;font-family:inherit;font-size:10px;font-weight:700;color:#9ca3af;cursor:pointer;padding:4px 0;transition:.2s}
+.nav-item.active{font-weight:900}.nav-item.active.orange{color:#f97316}.nav-item.active.teal{color:#0d9488}.nav-item.active.rose{color:#f43f5e}.nav-item.active.yellow{color:#eab308}.nav-item.active.emerald{color:#10b981}
+.nav-icon{font-size:22px}
+.page-pad{padding:48px 20px 20px}
+.profile-row{display:flex;align-items:center;gap:16px;background:white;border-radius:24px;padding:14px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.greeting{font-size:22px;font-weight:900;color:#111}
+.greeting-sub{font-size:13px;color:#f97316;font-weight:600}
+.points-card{background:linear-gradient(135deg,#FF7A00,#FF004D);border-radius:24px;padding:24px;margin-bottom:20px;color:white;box-shadow:0 12px 30px rgba(255,0,77,.25)}
+.points-label{font-size:16px;font-weight:800;margin-bottom:12px}
+.xp-bar{height:12px;background:rgba(0,0,0,.2);border-radius:50px;overflow:hidden;margin-bottom:16px}
+.xp-fill{height:100%;background:white;border-radius:50px;box-shadow:0 0 8px rgba(255,255,255,.4)}
+.points-row{display:flex;align-items:center;gap:12px}
+.coin{font-size:40px}.points-num{font-size:40px;font-weight:900}.points-unit{font-size:16px;opacity:.7;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.stat-card{background:white;border-radius:24px;padding:16px;display:flex;flex-direction:column;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.05);position:relative;padding-bottom:32px}
+.stat-label{font-size:13px;font-weight:800;color:#374151;margin-bottom:12px;text-align:center}
+.ring-wrap{position:relative;width:96px;height:96px;margin-bottom:8px}
+.ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}
+.fab-btn{position:absolute;bottom:-18px;width:48px;height:48px;border-radius:50%;border:4px solid white;font-size:24px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.fab-btn.teal{background:linear-gradient(135deg,#34A0A4,#0ea5e9);color:white}
+.fab-btn.rose{background:linear-gradient(135deg,#f43f5e,#fb923c);color:white}
+.step-input-row{position:absolute;bottom:-16px;width:90%;display:flex;background:white;border-radius:50px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.step-input{flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:13px;font-weight:700;text-align:center;color:#374151;padding:0 8px}
+.btn-meal{width:100%;background:linear-gradient(135deg,#92400e,#78350f);color:white;border:none;border-radius:24px;padding:20px;font-family:inherit;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 10px 25px rgba(120,53,15,.25);transition:.15s}
+.btn-meal:active{transform:scale(.98)}
+.page-title{font-size:28px;font-weight:900;color:#111;margin-bottom:20px}
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-btn{white-space:nowrap;padding:10px 20px;border-radius:16px;border:none;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;background:white;color:#6b7280;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.2s}
+.filter-btn.active{background:linear-gradient(135deg,#34A0A4,#10b981);color:white;transform:scale(1.04)}
+.mission-card{background:white;border-radius:24px;padding:16px;display:flex;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);transition:.3s}
+.mission-card.done{background:#f0fdf4;border:2px solid #bbf7d0}
+.mission-icon{width:56px;height:56px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.mission-content{flex:1}
+.mission-title{font-size:17px;font-weight:900;color:#111;line-height:1.3}
+.mission-title.strikethrough{text-decoration:line-through;color:#9ca3af}
+.mission-sub{font-size:13px;color:#6b7280;font-weight:600;margin:4px 0 12px;line-height:1.4}
+.mission-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f3f4f6;padding-top:10px}
+.pts-tag{font-size:13px;font-weight:900;color:#f97316;background:#fff7ed;padding:6px 12px;border-radius:10px;border:1px solid #fed7aa}
+.done-count{font-size:11px;color:#9ca3af;background:white;padding:2px 6px;border-radius:6px;margin-left:4px;border:1px solid #e5e7eb}
+.done-badge{font-weight:800;color:#10b981;font-size:14px;display:flex;align-items:center;gap:4px;background:white;padding:6px 12px;border-radius:10px;border:1px solid #bbf7d0}
+.btn-verify{background:linear-gradient(135deg,#FF7A00,#f97316);color:white;border:none;padding:8px 16px;border-radius:12px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(249,115,22,.3)}
+.food-header{padding:48px 20px 16px;position:sticky;top:0;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);z-index:10;border-bottom:1px solid #f0f0f0}
+.meal-tabs{display:flex;border-bottom:1px solid #f3f4f6;background:white;position:sticky;top:68px;z-index:9}
+.meal-tab{flex:1;padding:14px 4px;border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:800;color:#9ca3af;cursor:pointer;border-bottom:3px solid transparent;transition:.2s}
+.meal-tab.active{color:#f43f5e;border-bottom-color:#f43f5e}
+.photo-zone{width:100%;height:220px;border-radius:24px;border:2px dashed #fca5a5;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.2s;margin-bottom:16px}
+.photo-zone.has-image{border:none}
+.photo-placeholder{text-align:center;padding:20px}
+.camera-icon{font-size:48px;margin-bottom:12px}
+.analyzing{font-size:18px;font-weight:800;color:#f43f5e;text-align:center;padding:20px}
+.ai-result{background:linear-gradient(135deg,#fff5f5,white);border:1px solid #fecaca;border-radius:20px;padding:20px;margin-bottom:16px}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.ai-item{background:white;border-radius:14px;padding:10px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.ai-val{font-size:20px;font-weight:900}.ai-val.red{color:#ef4444}.ai-val.green{color:#10b981}
+.ai-key{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;margin-top:4px}
+.ai-advice{background:white;border-radius:14px;padding:14px;font-size:13px;font-weight:600;color:#374151;text-align:center;border:1px solid #f3f4f6}
+.log-list{display:flex;flex-direction:column;gap:10px}
+.log-item{background:white;border-radius:20px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.log-img{width:64px;height:64px;background:#f3f4f6;border-radius:16px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.lb-wrap{height:100%;background:linear-gradient(180deg,#f4f5f7,#e6f3ec);overflow-y:auto;position:relative}
+.lb-bg-blob{position:absolute;border-radius:50%;filter:blur(50px);pointer-events:none}
+.lb-bg-blob.b1{width:200px;height:200px;background:#a7f3d0;opacity:.4;top:-50px;left:-50px}
+.lb-bg-blob.b2{width:200px;height:200px;background:#fef08a;opacity:.4;top:20%;right:-50px}
+.lb-row{background:rgba(255,255,255,.95);border-radius:24px;padding:14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;border:4px solid transparent;transition:.2s}
+.lb-row:hover{transform:scale(1.01)}
+.lb-row.lb-me{border-color:#34d399;box-shadow:0 4px 16px rgba(52,211,153,.2)}
+.lb-bar{position:absolute;top:0;left:0;width:6px;height:100%}
+.lb-bar.rank1{background:linear-gradient(180deg,#fcd34d,#f59e0b)}
+.lb-bar.rank2{background:linear-gradient(180deg,#d1d5db,#9ca3af)}
+.lb-bar.rank3{background:linear-gradient(180deg,#fb923c,#ea580c)}
+.lb-rank{width:36px;text-align:center;font-size:24px;font-weight:900;color:#d1d5db}
+.lb-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,.12);flex-shrink:0}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-weight:900;font-size:17px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-pts{font-weight:700;font-size:14px;color:#6b7280}
+.you-badge{font-size:11px;background:#10b981;color:white;padding:2px 8px;border-radius:50px;margin-left:6px;vertical-align:middle}
+.my-rank-card{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:398px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);border-radius:28px;padding:16px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px rgba(59,130,246,.4);border:3px solid rgba(255,255,255,.2);z-index:10}
+.profile-card{background:white;border-radius:28px;padding:28px;display:flex;flex-direction:column;align-items:center;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.lv-badge{background:#d1fae5;color:#059669;font-weight:800;font-size:14px;padding:6px 20px;border-radius:50px;margin-top:8px;border:1px solid #a7f3d0}
+.btn-edit{margin-top:16px;background:#111;color:white;border:none;padding:12px 24px;border-radius:16px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+.edit-modal{background:white;border-radius:32px;padding:32px;width:100%;max-width:340px;position:relative}
+.close-btn{position:absolute;top:16px;right:16px;background:#f3f4f6;border:none;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer}
+.avatar-edit-wrap{position:relative;width:120px;height:120px;margin:0 auto 20px;cursor:pointer;border-radius:50%;overflow:visible}
+.avatar-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:0;transition:.2s}
+.avatar-edit-wrap:hover .avatar-overlay{opacity:1}
+.weekly-card{background:white;border-radius:24px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.eval-row{display:flex;justify-content:space-around;padding:12px;background:#f9fafb;border-radius:18px}
+.eval-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:700;color:#374151}
+.stars{font-size:14px}
+.badges-card{background:white;border-radius:24px;padding:20px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.badges-row{display:flex;justify-content:space-around}
+.badge-item{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.badge-item.locked{opacity:.4;filter:grayscale(1)}
+.badge-icon{width:72px;height:72px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:34px}
+.badge-name{font-size:11px;font-weight:800;color:#374151;max-width:72px;line-height:1.3}
+.btn-rewards{width:100%;background:linear-gradient(135deg,#FF7A00,#FF004D);color:white;border:none;border-radius:24px;padding:18px;font-family:inherit;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 10px 25px rgba(255,0,77,.25);margin-bottom:12px;transition:.15s}
+.btn-rewards:active{transform:scale(.98)}
+.btn-logout{width:100%;background:white;color:#ef4444;border:2px solid #fecaca;border-radius:24px;padding:16px;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:32px}
+.rewards-header{padding:48px 20px 16px;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px}
+.back-btn{background:#f3f4f6;border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer}
+.reward-big-card{background:white;border-radius:24px;padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.06);min-height:180px}
+.redeem-btn{width:100%;margin-top:auto;padding:10px;border:none;border-radius:14px;font-family:inherit;font-weight:900;font-size:13px;cursor:pointer;background:linear-gradient(135deg,#FF7A00,#f97316);color:white;box-shadow:0 4px 10px rgba(249,115,22,.25)}
+.empty-state{text-align:center;color:#9ca3af;font-weight:600;padding:32px;background:white;border-radius:20px;border:2px dashed #e5e7eb}
+
+/* SUCCESS MODAL */
+#success-modal{display:none;position:absolute;inset:0;z-index:200;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);justify-content:center;align-items:center;padding:24px}
+.success-box{background:white;border-radius:36px;padding:32px;width:100%;text-align:center;border:6px solid white;box-shadow:0 0 60px rgba(0,0,0,.4);position:relative;overflow:hidden}
+.success-confetti{position:absolute;font-size:80px;opacity:.08}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.page-pad,.lb-wrap>*,.mission-card,.profile-card{animation:fadeIn .3s ease}
+</style>
+
+</head>
+<body>
+<div id="root">
+  <div style="display:flex;height:100vh;align-items:center;justify-content:center">
+    <svg class="animate-pulse" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#FF004D" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+  </div>
+</div>
+
+<!-- Toast -->
+
+<div id="toast"></div>
+
+<!-- Confirm Dialog -->
+
+<div class="dialog-overlay" id="confirm-dialog">
+  <div class="dialog-box">
+    <div class="dialog-title" id="confirm-text"></div>
+    <div class="dialog-btns">
+      <button class="btn-cancel" id="confirm-cancel">ยกเลิก</button>
+      <button class="btn-confirm" id="confirm-ok">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt Dialog -->
+
+<div class="dialog-overlay" id="prompt-dialog">
+  <div class="dialog-box">
+    <div class="dialog-title" id="prompt-title"></div>
+    <p style="color:#888;font-size:13px;margin-bottom:16px" id="prompt-desc"></p>
+    <input type="number" id="prompt-input" class="input-field" style="text-align:center;font-size:28px;font-weight:900;color:#10b981"/>
+    <div class="dialog-btns">
+      <button class="btn-cancel" id="prompt-cancel">ยกเลิก</button>
+      <button class="btn-confirm" style="background:#10b981;box-shadow:0 8px 20px rgba(16,185,129,.3)" id="prompt-ok">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+
+<div id="success-modal">
+  <div class="success-box">
+    <div class="success-confetti" style="top:-20px;left:-20px">🎉</div>
+    <div class="success-confetti" style="bottom:-20px;right:-20px">⭐</div>
+    <div style="font-size:72px;margin-bottom:12px">🎉</div>
+    <h2 style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#f97316,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">ยินดีด้วย!</h2>
+    <p style="font-weight:700;margin-bottom:8px">คุณได้แลกรางวัล:</p>
+    <p style="font-size:20px;font-weight:900;color:#111;margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:16px" id="success-title"></p>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:20px;padding:20px;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">📱</div>
+      <p style="font-weight:800;font-size:16px;color:#92400e;margin-bottom:12px">📸 กรุณาแคปหน้าจอนี้</p>
+      <div style="background:#06C755;padding:14px;border-radius:14px;cursor:pointer">
+        <span style="color:white;font-weight:900;font-size:16px">ส่งหลักฐานผ่าน LINE</span>
+      </div>
+    </div>
+    <button onclick="document.getElementById('success-modal').style.display='none'" style="width:100%;background:#111;color:white;border:none;padding:16px;border-radius:20px;font-family:inherit;font-size:16px;font-weight:900;cursor:pointer">รับทราบ ปิดหน้าต่าง</button>
+  </div>
+</div>
+
+</body>
+</html>
