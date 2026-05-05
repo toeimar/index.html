@@ -2,1538 +2,1646 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IA CRM - Smart Insurance Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ออมทองพรีเมียม - ระบบออมเงินเพื่อรับทอง</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #D4AF37;
+    --gold-light: #F4E5B3;
+    --gold-dark: #AA8B2B;
+    --black: #1A1A1A;
+    --gray-dark: #4A4A4A;
+    --gray: #8A8A8A;
+    --gray-light: #F3F4F6;
+    --bg-color: #FAFAFB;
+    --white: #FFFFFF;
+    --red: #EF4444;
+    --green: #10B981;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Sarabun', sans-serif; 
+    -webkit-tap-highlight-color: transparent; 
+  }
+  
+  body { 
+    background: var(--bg-color); 
+    color: var(--black); 
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+  h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
+  
+  .hidden { display: none !important; }
+  .flex { display: flex; }
+  .grid { display: grid; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .justify-center { justify-content: center; }
+  .gap-2 { gap: 8px; } .gap-4 { gap: 16px; }
+  .mt-4 { margin-top: 16px; } .mb-4 { margin-bottom: 16px; }
+  .text-center { text-align: center; }
+  
+  /* Buttons - Touch Friendly */
+  .btn { 
+    padding: 14px 20px; 
+    border-radius: 14px; 
+    border: none; 
+    font-weight: 600; 
+    font-size: 15px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .btn-primary { background: var(--gold); color: white; box-shadow: 0 4px 12px rgba(212,175,55,0.3); }
+  .btn-primary:active { transform: scale(0.96); opacity: 0.9; } 
+  .btn-outline { background: white; border: 1.5px solid var(--gold); color: var(--gold); }
+  .btn-outline:active { transform: scale(0.96); background: var(--gold-light); }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-danger:active { transform: scale(0.96); opacity: 0.9; }
+  .btn-success { background: var(--green); color: white; }
+  .btn-success:active { transform: scale(0.96); opacity: 0.9; }
+  .btn-sm { padding: 10px 16px; font-size: 13px; border-radius: 10px; }
+  
+  /* Inputs */
+  .form-group { margin-bottom: 20px; text-align: left; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-dark); margin-bottom: 8px; }
+  .form-control { 
+    width: 100%; 
+    padding: 14px 16px; 
+    border: 1.5px solid #E5E7EB; 
+    border-radius: 14px; 
+    font-size: 16px; 
+    outline: none; 
+    transition: 0.2s; 
+    background: white; 
+    appearance: none;
+  }
+  .form-control:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); }
+  .form-control:disabled, .form-control[readonly] { background: var(--gray-light); color: var(--gray); cursor: not-allowed; }
+  
+  /* Cards */
+  .card { 
+    background: white; 
+    border-radius: var(--radius); 
+    padding: 20px; 
+    box-shadow: var(--shadow-sm); 
+    margin-bottom: 20px; 
+    border: 1px solid #F3F4F6; 
+  }
+  .card-title { font-size: 18px; font-weight: 700; color: var(--black); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  
+  /* Badges */
+  .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .bg-green { background: #D1FAE5; color: #065F46; }
+  .bg-red { background: #FEE2E2; color: #991B1B; }
+  .bg-yellow { background: #FEF3C7; color: #92400E; }
+  .bg-gold { background: var(--gold-light); color: var(--gold-dark); }
 
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  /* Login Page */
+  #page-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #FAFAFB 0%, var(--gold-light) 100%); }
+  .login-box { width: 100%; max-width: 400px; background: white; padding: 40px 30px; border-radius: 24px; box-shadow: var(--shadow-md); text-align: center; }
+  .login-logo { width: 80px; height: 80px; background: var(--gold-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px; overflow: hidden; box-shadow: var(--shadow-sm); }
+  
+  /* Customer Nav Elements */
+  .app-header { 
+    background: rgba(255,255,255,0.85); 
+    backdrop-filter: blur(12px); 
+    -webkit-backdrop-filter: blur(12px); 
+    padding: calc(16px + env(safe-area-inset-top)) 20px 16px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05); 
+    position: sticky; 
+    top: 0; 
+    z-index: 50; 
+  }
+  .app-container { padding: 20px; padding-bottom: 140px; max-width: 600px; margin: 0 auto; }
+  
+  /* Shared Bottom Nav Styles */
+  .bottom-nav, .admin-bottom-nav { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    background: rgba(255,255,255,0.9); 
+    backdrop-filter: blur(12px); 
+    -webkit-backdrop-filter: blur(12px); 
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.04); 
+    display: flex; 
+    justify-content: space-around; 
+    padding: 12px 10px calc(16px + env(safe-area-inset-bottom)); 
+    border-top-left-radius: 24px; 
+    border-top-right-radius: 24px; 
+    z-index: 100; 
+    max-width: 600px; 
+    margin: 0 auto; 
+    border-top: 1px solid rgba(0,0,0,0.05);
+  }
+  .nav-item { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    color: var(--gray); 
+    font-size: 11px; 
+    font-weight: 600; 
+    gap: 4px; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    padding: 8px;
+    border-radius: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    flex: 1;
+  }
+  .nav-item:active { transform: scale(0.9); background: rgba(0,0,0,0.03); }
+  .nav-item.active { color: var(--gold); }
+  .nav-icon { font-size: 24px; margin-bottom: 2px; }
 
-  <!-- React & ReactDOM (ใช้ Cloudflare CDN เพื่อป้องกันปัญหาจอขาว/โหลดไม่ขึ้น) -->
-  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  /* Device Specific Displays */
+  .desktop-only { display: block; }
+  .mobile-only { display: none !important; }
 
-  <!-- Babel Compiler -->
-  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js"></script>
+  /* Admin Layout Base */
+  .admin-layout { display: flex; min-height: 100vh; }
+  .admin-sidebar { 
+    width: 280px; 
+    background: white; 
+    border-right: 1px solid #E5E7EB; 
+    display: flex; 
+    flex-direction: column; 
+    position: fixed; 
+    height: 100vh; 
+    z-index: 1001; 
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  }
+  .admin-content { flex: 1; margin-left: 280px; padding: 32px; max-width: 1200px; padding-bottom: 60px; }
+  .admin-nav-item { 
+    padding: 16px 24px; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    color: var(--gray-dark); 
+    font-weight: 500; 
+    cursor: pointer; 
+    border-left: 4px solid transparent; 
+    user-select: none;
+  }
+  .admin-nav-item:active { background: var(--gray-light); }
+  .admin-nav-item.active { background: var(--gold-light); color: var(--gold-dark); border-left-color: var(--gold); }
+  
+  /* Tables */
+  .table-responsive { 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+    width: 100%; 
+    padding-bottom: 10px; 
+  }
+  .table-responsive::-webkit-scrollbar { height: 6px; }
+  .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
+  .table-responsive::-webkit-scrollbar-thumb { background: #ddd; border-radius: 8px; }
+  
+  table { width: 100%; border-collapse: collapse; min-width: 650px; }
+  th, td { padding: 16px; text-align: left; border-bottom: 1px solid #E5E7EB; white-space: nowrap; vertical-align: middle; }
+  th { font-size: 13px; color: var(--gray); font-weight: 600; text-transform: uppercase; background: #F9FAFB; position: sticky; top: 0; }
+  td { font-size: 14px; }
+  
+  /* Slips & Images */
+  .img-preview { width: 100%; max-height: 250px; object-fit: contain; border-radius: 16px; border: 1px dashed var(--gray); margin-top: 10px; background: #f9f9f9; }
+  .avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold-light); margin-top: 10px; }
+  .qr-box { background: var(--gray-light); padding: 24px; border-radius: 20px; text-align: center; margin-bottom: 24px; }
+  .qr-box img { max-width: 100%; height: auto; max-height: 250px; border-radius: 12px; margin-bottom: 12px; object-fit: contain; }
+  
+  /* Utilities */
+  .balance-card { 
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark)); 
+    color: white; 
+    padding: 36px 24px; 
+    border-radius: 28px; 
+    text-align: center; 
+    margin-bottom: 24px; 
+    box-shadow: 0 12px 32px rgba(212,175,55,0.4); 
+    position: relative; 
+    overflow: hidden; 
+  }
+  .balance-card::after { content: '✨'; position: absolute; right: -10px; top: -10px; font-size: 100px; opacity: 0.1; }
+  .toast { position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); background: var(--black); color: white; padding: 14px 28px; border-radius: 30px; font-size: 14px; font-weight: 500; z-index: 9999; display: none; box-shadow: var(--shadow-md); text-align: center; white-space: normal; line-height: 1.5; max-width: 90%; }
 
-  <!-- FIREBASE -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  /* --- MOBILE & IPAD RESPONSIVE OVERRIDES --- */
+  @media (max-width: 1400px) {
+    .desktop-only { display: none !important; }
+    .mobile-only { display: flex !important; } 
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700;800&display=swap');
-    body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-  </style>
-
-  <!-- YOUR FIREBASE CONFIG -->
-  <script>
-    window.MY_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyA6pLMExFN2d7oVQKLldcB_ahB5-o4zw_E",
-      authDomain: "vitalvibe-c0306.firebaseapp.com",
-      projectId: "vitalvibe-c0306",
-      storageBucket: "vitalvibe-c0306.firebasestorage.app",
-      messagingSenderId: "18887442289",
-      appId: "1:18887442289:web:655ebb50976c911fec80d0",
-      measurementId: "G-4DWBTKPNP3"
-    };
-  </script>
-</head>
-<body class="text-slate-800">
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
-
-    // --- CONFIG & CONSTANTS ---
-    const ADMIN_EMAIL = "toei.mar168@gmail.com";
-    const STATUS_LIST = ['ลีดใหม่', 'นัดหมาย', 'เสนอแบบ', 'ติดตามผล', 'ปิดการขาย'];
-    const CHART_COLORS = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#ec4899'];
+    .admin-layout { flex-direction: column; }
+    .admin-sidebar { display: none !important; } 
     
-    // --- TELEGRAM CONFIG ---
-    const TELEGRAM_BOT_TOKEN = "8772333460:AAG95AcJZFw8AJrpqJdh8LuPa2z2cDF0w2c";
-    // อัปเดต Chat ID ห้องรวม
-    const TELEGRAM_CHAT_ID = "-1003760920538";
+    .admin-content { margin-left: 0; padding: 16px; padding-bottom: 120px; max-width: 100%; }
+    
+    .admin-topbar { 
+      position: sticky; 
+      top: 0; 
+      background: rgba(255,255,255,0.95); 
+      backdrop-filter: blur(10px); 
+      -webkit-backdrop-filter: blur(10px); 
+      padding: calc(16px + env(safe-area-inset-top)) 20px 16px; 
+      margin: -16px -16px 20px -16px; 
+      z-index: 900; 
+      border-bottom: 1px solid rgba(0,0,0,0.05); 
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .grid { grid-template-columns: 1fr 1fr; gap: 16px; } 
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; } 
+    }
+    .card { padding: 16px; }
+    
+    .tx-item-history { flex-wrap: wrap; }
+    .tx-amount-col { text-align: right; min-width: 90px; }
+  }
 
-    // --- UTILITIES ---
-    const formatCurrency = (val) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 }).format(val || 0);
-    const calculateAge = (dob) => {
-      if(!dob) return 0;
-      const diff_ms = Date.now() - new Date(dob).getTime();
-      const age_dt = new Date(diff_ms); 
-      return Math.abs(age_dt.getUTCFullYear() - 1970);
-    };
-    const toBuddhistYear = (dateStr) => {
-      if(!dateStr) return '-';
-      const d = new Date(dateStr);
-      return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear() + 543}`;
-    };
-    const getTodayStr = () => new Date().toISOString().split('T')[0];
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+  .modal { background: white; width: 100%; max-width: 400px; border-radius: 28px; padding: 28px; animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto; }
+  @keyframes pop { from { transform: scale(0.85) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 
-    const Icon = ({ name, size = 20, className = "" }) => <i className={`ph ph-${name} ${className}`} style={{ fontSize: size }}></i>;
-    const IconFill = ({ name, size = 20, className = "" }) => <i className={`ph-fill ph-${name} ${className}`} style={{ fontSize: size }}></i>;
+</style>
+</head>
+<body>
 
-    const notifyTelegram = (message, targetChatId = TELEGRAM_CHAT_ID) => {
-      if (!targetChatId) return; 
-      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: targetChatId,
-          text: `🔔 <b>IA CRM Alert</b>\n\n${message}`,
-          parse_mode: "HTML"
-        })
-      }).catch(err => console.error("Telegram Error:", err));
-    };
+<!-- Script ตรวจสอบการเปิดไฟล์ผิดวิธี -->
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var loader = document.getElementById('loading');
+      if (loader && loader.style.display !== 'none') {
+        loader.innerHTML = '<div style="background:white; padding:24px; border-radius:24px; color:#333; max-width:90%; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);"><div style="font-size:50px; margin-bottom:10px;">⚠️</div><h3 style="color:#e74c3c; margin-bottom:10px; font-family:\'Sarabun\', sans-serif;">เกิดข้อผิดพลาดในการโหลด</h3><p style="font-size:15px; color:#666; font-family:\'Sarabun\', sans-serif;">ระบบถูกบล็อก! หากคุณดับเบิลคลิกเปิดไฟล์นี้จากเครื่องโดยตรง เบราว์เซอร์จะไม่อนุญาตให้เชื่อมต่อฐานข้อมูลครับ<br><br><b style="color:var(--black);">วิธีแก้:</b> ให้อัปโหลดไฟล์นี้ขึ้นระบบเซิร์ฟเวอร์ (เช่น GitHub Pages) แล้วเข้าใช้งานผ่านลิงก์เว็บแทนครับ</p></div>';
+      }
+    }, 4000);
+  });
+</script>
 
-    // --- CUSTOM CSS BAR CHART ---
-    function CSSBarChart({ data }) {
-      const maxCount = Math.max(...data.map(d => d.count), 1);
-      return (
-        <div className="flex items-end justify-around h-[350px] pt-10 border-b-2 border-slate-100 pb-2">
-          {data.map((d, i) => (
-             <div key={i} className="flex flex-col items-center w-full group cursor-pointer">
-               <div className="relative w-12 md:w-20 rounded-t-xl transition-all duration-700 ease-out flex items-end justify-center pb-2" 
-                    style={{height: `${(d.count / maxCount) * 100}%`, minHeight: '30px', backgroundColor: CHART_COLORS[i % CHART_COLORS.length]}}>
-                 <span className="font-black text-white text-sm">{d.count}</span>
-               </div>
-               <span className="text-xs md:text-sm font-black text-slate-500 mt-4">{d.name}</span>
-             </div>
-          ))}
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Loading Overlay -->
+<div id="loading" class="modal-overlay" style="z-index: 9999; flex-direction: column; display: flex;">
+  <div style="font-size: 48px; animation: spin 1s linear infinite;">⏳</div>
+  <div style="color: white; margin-top: 16px; font-weight: 600; letter-spacing: 1px;" id="loading-text">กำลังเชื่อมต่อระบบ...</div>
+</div>
+
+<!-- PAGE: LOGIN / REGISTER -->
+<div id="page-login" class="hidden">
+  <div class="login-box">
+    <div class="login-logo" id="login-logo-container">
+      <img id="login-logo-img" src="" alt="โลโก้ร้าน" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+      <span id="login-logo-fallback">✨</span>
+    </div>
+    <h1 class="serif" style="margin-bottom: 8px;" id="login-shop-name">พรีเมียมออมทอง</h1>
+    <p style="color: var(--gray); margin-bottom: 24px; font-size: 14px;">ระบบสะสมเงินออมเพื่อรับทองคำ</p>
+    
+    <div class="flex gap-2 mb-4" style="background: var(--gray-light); padding: 4px; border-radius: 14px;">
+      <button class="btn btn-sm" style="flex: 1; background: white; box-shadow: var(--shadow-sm); border-radius: 10px;" id="tab-login" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+      <button class="btn btn-sm" style="flex: 1; background: transparent; color: var(--gray); border-radius: 10px;" id="tab-register" onclick="switchAuthTab('register')">สมัครสมาชิก</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="form-login">
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์</label>
+        <input type="tel" id="login-phone" class="form-control" placeholder="08x-xxx-xxxx">
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="login-pass" class="form-control" placeholder="••••••">
+      </div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" onclick="handleLogin()">เข้าสู่ระบบ</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="form-register" class="hidden">
+      <div class="form-group">
+        <label>ชื่อ - นามสกุล</label>
+        <input type="text" id="reg-name" class="form-control" placeholder="ชื่อ นามสกุล">
+      </div>
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์</label>
+        <input type="tel" id="reg-phone" class="form-control" placeholder="08x-xxx-xxxx">
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="reg-pass" class="form-control" placeholder="ตั้งรหัสผ่าน">
+      </div>
+      <div class="form-group" id="secret-code-group">
+        <label>รหัสลับ (สำหรับผู้ดูแลระบบคนแรกเท่านั้น)</label>
+        <input type="text" id="reg-secret" class="form-control" placeholder="ปล่อยว่างหากเป็นลูกค้า">
+      </div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" onclick="handleRegister()">ลงทะเบียน</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- PAGE: CUSTOMER APP -->
+<div id="page-customer" class="hidden">
+  <div class="app-header">
+    <div class="flex items-center gap-3">
+      <img id="cust-header-logo" src="" alt="โลโก้" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); box-shadow: var(--shadow-sm); display: none;">
+      <div id="cust-header-logo-fallback" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight: bold; box-shadow: var(--shadow-sm);">ร้าน</div>
+      <h3 class="serif" id="cust-header-name" style="font-size: 18px;">ร้านทองพรีเมียม</h3>
+    </div>
+    <div class="flex gap-2 items-center">
+      <button id="btn-switch-admin" class="btn btn-sm btn-primary hidden" style="border-radius: 20px; font-size: 12px; padding: 6px 14px;" onclick="switchToAdminView()">กลับหน้าแอดมิน</button>
+      <button class="btn btn-sm btn-outline" style="border-radius: 20px; font-size: 12px; padding: 6px 14px;" onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <!-- Content: Home -->
+  <div class="app-container" id="cust-content-home">
+    <div class="balance-card">
+      <div style="font-size: 15px; opacity: 0.9; font-weight: 500;">ยอดเงินออมสะสมทั้งหมด</div>
+      <div class="serif" style="font-size: 44px; font-weight: 700; margin: 10px 0; letter-spacing: -1px;">฿<span id="cust-balance">0.00</span></div>
+      <div class="badge bg-gold" style="display:inline-block; padding: 6px 14px; font-size: 13px;">พร้อมแลกทอง</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>รายการล่าสุด</span>
+        <span style="font-size: 14px; color: var(--gold); font-weight: 600; cursor: pointer;" onclick="navCust('history')">ดูทั้งหมด</span>
+      </div>
+      <div id="cust-recent-tx">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: Deposit -->
+  <div class="app-container hidden" id="cust-content-deposit">
+    <div class="card text-center">
+      <h3 class="serif mb-4" style="color: var(--gold-dark);">ฝากออมเงิน</h3>
+      <div class="qr-box">
+        <img id="cust-qr-img" src="" alt="QR Code" style="display:none; width: 100%;">
+        <div id="cust-qr-placeholder" style="color: var(--gray); font-size: 14px;">ไม่มีข้อมูล QR Code</div>
+        <div class="mt-4" style="text-align: left; background: white; padding: 16px; border-radius: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+          <div style="font-size: 12px; color: var(--gray);">ธนาคาร</div>
+          <div class="font-bold" id="cust-bank-name" style="font-size: 15px; margin-bottom: 8px;">-</div>
+          <div style="font-size: 12px; color: var(--gray);">ชื่อบัญชี</div>
+          <div class="font-bold" id="cust-bank-accname" style="font-size: 15px; margin-bottom: 8px;">-</div>
+          <div style="font-size: 12px; color: var(--gray);">เลขบัญชี</div>
+          <div class="font-bold serif" id="cust-bank-accno" style="font-size: 24px; color: var(--gold-dark); letter-spacing: 2px; font-family: 'Sarabun', sans-serif;">-</div>
         </div>
-      );
+      </div>
+      
+      <div class="form-group">
+        <label>จำนวนเงินที่โอน (บาท)</label>
+        <input type="number" id="dep-amount" class="form-control" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>หมายเหตุ</label>
+        <input type="text" id="dep-remark" class="form-control" placeholder="เช่น ออมครั้งที่ 1">
+      </div>
+      <div class="form-group">
+        <label>แนบสลิปโอนเงิน</label>
+        <input type="file" id="dep-slip" class="form-control" accept="image/*" onchange="previewImage(this, 'dep-preview')">
+        <img id="dep-preview" class="img-preview hidden">
+      </div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="submitDeposit()">ยืนยันการฝากออม</button>
+    </div>
+  </div>
+
+  <!-- Content: Withdraw -->
+  <div class="app-container hidden" id="cust-content-withdraw">
+    <div class="card">
+      <h3 class="serif mb-4" style="color: var(--gold-dark);">ถอนเงินออม / แลกทอง</h3>
+      <div style="background: var(--gold-light); padding: 20px; border-radius: 16px; margin-bottom: 24px; text-align: center;">
+        <div style="font-size: 14px; color: var(--gold-dark); font-weight: 500;">ยอดเงินที่ใช้ถอนได้สูงสุด</div>
+        <div class="serif" style="font-size: 32px; font-weight: 700; color: var(--gold-dark); margin-top: 4px;">฿<span id="cust-withdraw-max">0.00</span></div>
+      </div>
+      <div class="form-group">
+        <label>จำนวนเงินที่ต้องการนำไปแลก (บาท)</label>
+        <input type="number" id="wit-amount" class="form-control" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>หมายเหตุ</label>
+        <input type="text" id="wit-remark" class="form-control" placeholder="เช่น ต้องการทองแท่ง / มารับหน้าร้าน">
+      </div>
+      
+      <div class="form-group" style="background: #FEF3C7; padding: 20px; border-radius: 16px; margin-top: 24px; text-align:center;">
+        <label style="color: #92400E; font-size: 14px; margin-bottom: 12px; display:block;">📞 ติดต่อร้านทองเพื่อยืนยันการถอน</label>
+        <div id="cust-shop-contact-details" style="font-size: 15px; font-weight: 600; color: #92400E; line-height: 1.8; margin-bottom: 12px;"></div>
+        <div id="cust-shop-contact-btn"></div>
+      </div>
+      
+      <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="submitWithdraw()">ส่งคำขอถอนเงินออม</button>
+    </div>
+  </div>
+
+  <!-- Content: History -->
+  <div class="app-container hidden" id="cust-content-history">
+    <h3 class="serif mb-4" style="padding: 0 4px;">ประวัติการทำรายการ</h3>
+    <div class="card" style="padding: 12px 20px;">
+      <div id="cust-all-history"></div>
+    </div>
+  </div>
+
+  <!-- Content: Profile -->
+  <div class="app-container hidden" id="cust-content-profile">
+    <div class="card text-center">
+      <img id="pro-avatar-img" src="" alt="โปรไฟล์" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px; box-shadow: var(--shadow-sm); display: none;">
+      <div id="pro-avatar-fallback" style="width: 80px; height: 80px; background: var(--gray-light); border-radius: 50%; display: flex; align-items:center; justify-content:center; font-size:36px; margin: 0 auto 16px;">👤</div>
+      <h3 class="serif" id="pro-name" style="font-size: 22px;">ชื่อ นามสกุล</h3>
+      <div class="badge bg-gold mt-4" id="pro-role" style="padding: 6px 16px; font-size: 13px;">ลูกค้า</div>
+    </div>
+    <div class="card">
+      <div class="card-title">ข้อมูลส่วนตัว</div>
+      <div class="form-group">
+        <label>อัปโหลดรูปโปรไฟล์ใหม่</label>
+        <input type="file" id="edit-profile-pic" class="form-control" accept="image/*" style="padding: 10px;" onchange="previewImage(this, 'profile-preview')">
+        <img id="profile-preview" class="avatar-preview hidden">
+      </div>
+      <div class="form-group"><label>ชื่อ-นามสกุล</label><input type="text" id="edit-name" class="form-control"></div>
+      <div class="form-group"><label>เบอร์โทรศัพท์ (ใช้เข้าระบบ)</label><input type="text" id="edit-phone" class="form-control" disabled style="background: var(--gray-light); color: var(--gray);"></div>
+      <div class="form-group"><label>อีเมล (เพิ่มเติม)</label><input type="email" id="edit-email" class="form-control"></div>
+      <button class="btn btn-primary mt-4" style="width:100%" onclick="updateProfile()">บันทึกข้อมูล</button>
+    </div>
+    <div class="card">
+      <div class="card-title">เปลี่ยนรหัสผ่าน</div>
+      <div class="form-group"><label>รหัสผ่านใหม่</label><input type="password" id="edit-pass" class="form-control"></div>
+      <button class="btn btn-outline" style="width:100%" onclick="updatePassword()">อัปเดตรหัสผ่าน</button>
+    </div>
+  </div>
+
+  <!-- Bottom App Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="navCust('home')"><span class="nav-icon">🏠</span>หน้าแรก</div>
+    <div class="nav-item" onclick="navCust('deposit')"><span class="nav-icon">📥</span>ฝาก</div>
+    <div class="nav-item" onclick="navCust('withdraw')"><span class="nav-icon">📤</span>ถอน</div>
+    <div class="nav-item" onclick="navCust('history')"><span class="nav-icon">📋</span>ประวัติ</div>
+    <div class="nav-item" onclick="navCust('profile')"><span class="nav-icon">👤</span>โปรไฟล์</div>
+  </div>
+</div>
+
+
+<!-- PAGE: ADMIN APP -->
+<div id="admin-sidebar-backdrop" onclick="toggleAdminSidebar()"></div>
+<div id="page-admin" class="hidden admin-layout">
+  
+  <!-- Sidebar -->
+  <div class="admin-sidebar desktop-only" id="admin-sidebar">
+    <div style="padding: calc(24px + env(safe-area-inset-top)) 24px 24px; border-bottom: 1px solid #E5E7EB;">
+      <h2 class="serif" style="color: var(--gold-dark); font-size: 20px;">Admin Panel</h2>
+      <div style="font-size: 13px; color: var(--gray); margin-top: 4px;" id="admin-shop-name-sidebar">ร้านทองพรีเมียม</div>
+    </div>
+    <div style="padding: 16px 0; flex: 1; overflow-y: auto;">
+      <div class="admin-nav-item active" onclick="navAdmin('dashboard')"><span style="font-size: 20px; width: 24px;">📊</span> ภาพรวม</div>
+      <div class="admin-nav-item" onclick="navAdmin('transactions')"><span style="font-size: 20px; width: 24px;">📋</span> ธุรกรรม & อนุมัติ <span id="admin-badge-tx" class="badge bg-red hidden" style="margin-left:auto; font-size: 11px;">0</span></div>
+      <div class="admin-nav-item" onclick="navAdmin('users')"><span style="font-size: 20px; width: 24px;">👥</span> จัดการลูกค้า</div>
+      <div class="admin-nav-item" id="nav-settings" onclick="navAdmin('settings')"><span style="font-size: 20px; width: 24px;">⚙️</span> ตั้งค่าร้านค้า</div>
+      <div class="admin-nav-item" onclick="switchToCustomerView()"><span style="font-size: 20px; width: 24px;">📱</span> มุมมองลูกค้า</div>
+    </div>
+    <div style="padding: 24px calc(24px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB;">
+      <button class="btn btn-outline" style="width: 100%; border-color: #E5E7EB; color: var(--gray-dark);" onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <div class="admin-content" id="admin-content-area">
+    <!-- Topbar -->
+    <div class="admin-topbar mobile-only">
+      <h2 class="serif" id="admin-page-title-mobile" style="font-size: 20px; margin: 0; color: var(--gold-dark);">ภาพรวมระบบ</h2>
+      <button class="btn btn-sm btn-outline" style="border-radius: 20px; font-size: 12px; padding: 6px 14px;" onclick="logout()">ออกจากระบบ</button>
+    </div>
+
+    <!-- Title for Desktop -->
+    <div class="flex items-center gap-3 mb-4 desktop-only" style="margin-bottom: 24px;">
+      <h2 class="serif" id="admin-page-title" style="font-size: 22px;">ภาพรวมระบบ</h2>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-sec-dashboard">
+      <div class="grid">
+        <div class="card" style="border-left: 4px solid var(--gold);">
+          <div style="font-size: 14px; color: var(--gray); font-weight: 500;">ยอดเงินออมรวมในระบบ</div>
+          <div class="serif" style="font-size: 36px; font-weight: 700; margin-top: 8px;">฿<span id="stat-total-balance">0</span></div>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--black);">
+          <div style="font-size: 14px; color: var(--gray); font-weight: 500;">จำนวนสมาชิกทั้งหมด</div>
+          <div class="serif" style="font-size: 36px; font-weight: 700; margin-top: 8px;"><span id="stat-total-users">0</span> <span style="font-size: 16px; color: var(--gray); font-weight: 400; font-family: 'Sarabun', sans-serif;">คน</span></div>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--red);">
+          <div style="font-size: 14px; color: var(--gray); font-weight: 500;">รายการรออนุมัติ</div>
+          <div class="serif" style="font-size: 36px; font-weight: 700; margin-top: 8px; color: var(--red);"><span id="stat-pending">0</span> <span style="font-size: 16px; color: var(--gray); font-weight: 400; font-family: 'Sarabun', sans-serif;">รายการ</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Transactions -->
+    <div id="admin-sec-transactions" class="hidden">
+      <div class="card" style="padding: 0;">
+        <div class="card-title" style="padding: 20px 20px 0;">
+          รายการฝาก-ถอน
+          <button class="btn btn-sm btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="exportData('transactions')">📥 Export Excel</button>
+        </div>
+        <div class="table-responsive" style="padding: 0 20px 20px;">
+          <table id="table-tx">
+            <thead>
+              <tr><th>วันที่</th><th>ลูกค้า</th><th>ประเภท</th><th>ยอดเงิน</th><th>หมายเหตุ</th><th>สถานะ</th><th>จัดการ</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Users -->
+    <div id="admin-sec-users" class="hidden">
+      <div class="card" style="padding: 0;">
+        <div class="card-title" style="padding: 20px 20px 0;">
+          รายชื่อผู้ใช้งาน
+          <button class="btn btn-sm btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="exportData('users')">📥 Export Excel</button>
+        </div>
+        <div class="table-responsive" style="padding: 0 20px 20px;">
+          <table id="table-users">
+            <thead>
+              <tr><th>โปรไฟล์</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>สิทธิ์</th><th>ยอดสะสม</th><th>จัดการ</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Settings -->
+    <div id="admin-sec-settings" class="hidden">
+      <div class="card" style="max-width: 600px;">
+        <div class="card-title">ข้อมูลร้านค้า และ บัญชีรับโอน</div>
+        
+        <div class="form-group">
+          <label>อัปโหลดรูปร้านค้า (โลโก้)</label>
+          <input type="file" class="form-control" accept="image/*" style="padding: 10px;" id="set-shop-logo" onchange="previewImage(this, 'set-logo-preview')">
+          <img id="set-logo-preview" class="avatar-preview hidden">
+        </div>
+
+        <div class="form-group"><label>ชื่อร้าน</label><input type="text" id="set-shopname" class="form-control"></div>
+        <div class="form-group"><label>เบอร์โทรติดต่อ</label><input type="text" id="set-phone" class="form-control"></div>
+        
+        <div class="form-group"><label>Line ID (ไอดีไลน์ - แสดงเฉยๆ ไม่คลิก)</label><input type="text" id="set-line-id" class="form-control" placeholder="เช่น @goldshop"></div>
+        <div class="form-group"><label>ลิงก์เพิ่มเพื่อน Line (URL - สำหรับทำปุ่มคลิก)</label><input type="text" id="set-line-link" class="form-control" placeholder="เช่น https://line.me/ti/p/..."></div>
+        
+        <h4 class="mt-6 mb-4" style="color: var(--gold-dark); border-bottom: 1px solid #eee; padding-bottom: 8px;">บัญชีธนาคารรับฝากออม</h4>
+        <div class="form-group"><label>ชื่อธนาคาร</label><input type="text" id="set-bankname" class="form-control"></div>
+        <div class="form-group"><label>ชื่อบัญชี</label><input type="text" id="set-bankaccname" class="form-control"></div>
+        <div class="form-group"><label>เลขบัญชี</label><input type="text" id="set-bankaccno" class="form-control"></div>
+        
+        <div class="form-group">
+          <label>อัปโหลดรูป QR Code รับเงิน</label>
+          <input type="file" class="form-control" accept="image/*" style="padding: 10px;" id="set-qr-code" onchange="previewImage(this, 'set-qr-preview')">
+          <img id="set-qr-preview" class="img-preview hidden">
+        </div>
+
+        <h4 class="mt-6 mb-4" style="color: var(--gold-dark); border-bottom: 1px solid #eee; padding-bottom: 8px;">Telegram Backup & Notifications</h4>
+        <div class="form-group">
+          <label>Bot Token (ล็อกอัตโนมัติ ห้ามเปลี่ยน)</label>
+          <input type="text" id="set-tg-token" class="form-control" value="8731749401:AAEmA6wiK5o4NM0CcjJnmgt_827PbyMtPYw" readonly disabled style="opacity: 0.7;">
+        </div>
+        <div class="form-group"><label>Chat ID</label><input type="text" id="set-tg-chatid" class="form-control" value="-1003963635991"></div>
+        
+        <div class="grid gap-3 mt-6">
+          <button class="btn btn-primary" style="width: 100%;" onclick="saveSettings()">💾 บันทึกตั้งค่า</button>
+          <button class="btn btn-outline" style="width: 100%;" onclick="testTelegram()">ทดสอบแจ้งเตือน</button>
+          <button class="btn btn-outline" style="width: 100%; border-color:var(--green); color:var(--green);" onclick="backupToTelegram()">Backup ข้อมูลเดี๋ยวนี้</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav for Admin -->
+  <div class="admin-bottom-nav mobile-only">
+    <div class="nav-item active" onclick="navAdmin('dashboard')"><span class="nav-icon">📊</span>หน้าแรก</div>
+    <div class="nav-item" onclick="navAdmin('transactions')">
+      <span class="nav-icon">📋</span>ธุรกรรม
+      <span id="admin-badge-tx-mobile" class="badge bg-red hidden" style="position: absolute; top: 0; right: 0; padding: 2px 6px; font-size: 9px; transform: translate(20%, -20%);">0</span>
+    </div>
+    <div class="nav-item" onclick="navAdmin('users')"><span class="nav-icon">👥</span>ลูกค้า</div>
+    <div class="nav-item" id="nav-settings-mobile" onclick="navAdmin('settings')"><span class="nav-icon">⚙️</span>ตั้งค่า</div>
+    <div class="nav-item" onclick="switchToCustomerView()"><span class="nav-icon">📱</span>หน้าลูกค้า</div>
+  </div>
+</div>
+
+<!-- Modal: Edit Withdraw Amount -->
+<div id="modal-edit-withdraw" class="modal-overlay">
+  <div class="modal">
+    <h3 class="serif mb-4">ตรวจสอบและแก้ไขยอดถอน</h3>
+    <p style="font-size: 14px; color: var(--gray); margin-bottom: 20px;">ยอดที่ลูกค้าขอถอน: <b id="mw-req-amt" style="color: var(--black); font-size: 16px;">0</b> บาท</p>
+    <div class="form-group">
+      <label>ยอดเงินสุทธิที่อนุมัติให้หัก (บาท)</label>
+      <input type="number" id="mw-app-amt" class="form-control" style="font-size: 20px; font-weight: bold; color: var(--gold-dark);">
+    </div>
+    <div class="flex gap-2 mt-6">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('modal-edit-withdraw')">ยกเลิก</button>
+      <button class="btn btn-success" style="flex:1" onclick="confirmApproveWithdraw()">อนุมัติยอดนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: View Slip -->
+<div id="modal-view-slip" class="modal-overlay">
+  <div class="modal text-center" style="padding: 16px; background: transparent; box-shadow: none;">
+    <h3 class="serif mb-4" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">หลักฐานการโอนเงิน</h3>
+    <img id="slip-image-full" src="" style="width: 100%; border-radius: 16px; margin-bottom: 16px; box-shadow: var(--shadow-md);">
+    <button class="btn btn-primary" style="width: 100%; background: white; color: var(--black);" onclick="closeModal('modal-view-slip')">ปิดรูปภาพ</button>
+  </div>
+</div>
+
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+  // System Helpers
+  const getEl = (id) => document.getElementById(id);
+  const hideEl = (id) => { const el = getEl(id); if(el) el.classList.add('hidden'); };
+  const showEl = (id) => { const el = getEl(id); if(el) el.classList.remove('hidden'); };
+  const getVal = (id) => { const el = getEl(id); return el ? el.value : ''; };
+  const setVal = (id, val) => { const el = getEl(id); if(el) el.value = val; };
+  const setText = (id, txt) => { const el = getEl(id); if(el) el.textContent = txt; };
+
+  // ของคุณแบบ 100% ไม่เปลี่ยน
+  const myFirebaseConfig = {
+    apiKey: "AIzaSyD1GnYInbXZHxjX91E25ki2WP-R0a9pWTU",
+    authDomain: "gold-savings-517d2.firebaseapp.com",
+    projectId: "gold-savings-517d2",
+    storageBucket: "gold-savings-517d2.firebasestorage.app",
+    messagingSenderId: "1039204885436",
+    appId: "1:1039204885436:web:046afe73cf7c98f556c1b9",
+    measurementId: "G-H6H6GL3NW6"
+  };
+  
+  const safeParseJSON = (str, fallback) => {
+    try { return str ? JSON.parse(str) : fallback; } catch (e) { return fallback; }
+  };
+  
+  // บังคับใช้ Firebase ของคุณเสมอ ไม่ว่าจะเปิดจากที่ไหน
+  const firebaseConfig = myFirebaseConfig;
+  const appId = 'gold-savings-app';
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  
+  // บังคับให้เขียนลง Database Root ของคุณโดยตรง เพื่อไม่ให้ติดปัญหาการซิงค์
+  const getCol = (name) => collection(db, name);
+  const getDocRef = (colName, docId) => doc(db, colName, docId);
+
+  window.appState = {
+    currentUser: null,
+    users: safeParseJSON(localStorage.getItem('cache_users'), []) || [],
+    transactions: safeParseJSON(localStorage.getItem('cache_txs'), []) || [],
+    settings: safeParseJSON(localStorage.getItem('cache_settings'), null) || {
+      shopName: 'ร้านทองพรีเมียม', phone: '', lineId: '', lineLink: '', bankName: '', bankAccName: '', bankAccNo: '', qrBase64: '', shopLogoBase64: '', 
+      tgToken: '8731749401:AAEmA6wiK5o4NM0CcjJnmgt_827PbyMtPYw', tgChatId: '-1003963635991', hasSuperAdmin: false
+    },
+  };
+
+  let pendingTxId = null;
+  let isListenersSetup = false;
+
+  window.showToast = (msg, isError = false) => {
+    const t = getEl('toast');
+    if(!t) return;
+    t.textContent = msg;
+    t.style.background = isError ? "var(--red)" : "var(--black)";
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 4000);
+  };
+  
+  window.showLoading = (show) => {
+    const el = getEl('loading');
+    if(el) {
+       el.style.display = show ? 'flex' : 'none';
+       const txt = getEl('loading-text');
+       if(txt) txt.textContent = "กำลังเชื่อมต่อระบบ...";
+    }
+  };
+  
+  window.closeModal = (id) => {
+    const el = getEl(id);
+    if(el) el.style.display = 'none';
+  };
+  
+  window.openModal = (id) => {
+    const el = getEl(id);
+    if(el) el.style.display = 'flex';
+  };
+  
+  const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+  window.previewImage = (input, imgId) => {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const MAX_WIDTH = 800;
+          let width = img.width; let height = img.height;
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          canvas.width = width; canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          const el = getEl(imgId);
+          if(el) {
+             el.src = dataUrl;
+             el.classList.remove('hidden');
+          }
+          input.dataset.base64 = dataUrl;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  };
+
+  const safeSetDoc = async (ref, data, options = {}) => {
+    if (!auth.currentUser) return;
+    try { await setDoc(ref, data, options); } catch(e){ console.error(e); }
+  };
+
+  const safeUpdateDoc = async (ref, data) => {
+    if (!auth.currentUser) return;
+    try { await updateDoc(ref, data); } catch(e){ console.error(e); }
+  };
+
+  const initApp = async () => {
+    try {
+      const savedUserStr = localStorage.getItem('goldAppUser');
+      if (savedUserStr) {
+         window.appState.currentUser = JSON.parse(savedUserStr);
+      }
+    } catch(e) {}
+    
+    updateSettingsUI();
+    routeUser(); 
+
+    onAuthStateChanged(auth, (user) => {
+      if (user && !isListenersSetup) {
+        isListenersSetup = true;
+        setupListeners();
+      }
+    });
+
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (e) {
+      console.warn("Offline Mode, running on local cache.");
     }
 
-    // ============================================================================
-    // MAIN APP
-    // ============================================================================
-    function NovaCRMApp() {
-      const [appState, setAppState] = useState('loading');
-      const [db, setDb] = useState(null);
-      const [toastMsg, setToastMsg] = useState(null);
-      const [users, setUsers] = useState([]);
-      const [customers, setCustomers] = useState([]);
-      const [tasks, setTasks] = useState([]);
-      
-      // เปลี่ยนแปลงส่วนนี้ให้ดึงข้อมูลที่จำไว้จาก localStorage ขึ้นมาใช้เลย
-      const [currentUser, setCurrentUser] = useState(() => {
-        const savedUser = localStorage.getItem('crm_logged_in_user');
-        return savedUser ? JSON.parse(savedUser) : null;
-      });
-      const [currentRoute, setCurrentRoute] = useState('home');
-      const [isSidebarOpen, setSidebarOpen] = useState(false);
+    setInterval(() => checkAndRunBackup(), 3600000);
+  };
 
-      const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); };
+  const setupListeners = () => {
+    if(!auth.currentUser) return;
+    
+    onSnapshot(getDocRef('settings', 'global'), (doc) => {
+      if(doc.exists()) {
+        window.appState.settings = {...window.appState.settings, ...doc.data()};
+        try { localStorage.setItem('cache_settings', JSON.stringify(window.appState.settings)); } catch(e){}
+        updateSettingsUI();
+      }
+    }, (err) => console.warn("Sync paused"));
 
-      useEffect(() => {
-        let isMounted = true;
-
-        const initSystem = async () => {
-          try {
-            if (!window.MY_FIREBASE_CONFIG) { 
-                console.error("No Firebase Config"); 
-                if(isMounted) setAppState('ready'); 
-                return; 
-            }
-            if (!firebase.apps.length) firebase.initializeApp(window.MY_FIREBASE_CONFIG);
-            
-            const firestoreDb = firebase.firestore();
-            setDb(firestoreDb);
-            
-            firebase.auth().onAuthStateChanged(user => {
-                if(isMounted) {
-                    if(!user) { 
-                        firebase.auth().signInAnonymously().catch(err => { 
-                            console.error("Auth Error", err); 
-                            setAppState('ready'); 
-                        }); 
-                    } else {
-                        setAppState('ready');
-                    }
-                }
-            });
-          } catch (err) { 
-              console.error("Init Error", err); 
-              if(isMounted) setAppState('ready'); 
-          }
-        };
-
-        // ระบบข้ามหน้าโหลดอัตโนมัติ (เผื่อ Firebase โดนบล็อก)
-        const fallbackTimer = setTimeout(() => {
-            if (isMounted) setAppState(prev => prev === 'loading' ? 'ready' : prev);
-        }, 3500);
-
-        initSystem();
-
-        return () => { 
-            isMounted = false; 
-            clearTimeout(fallbackTimer); 
-        };
-      }, []);
-
-      useEffect(() => {
-        if(!db) return;
-        const unsubU = db.collection('crm_users').onSnapshot(snap => { const arr = []; snap.forEach(d => arr.push(d.data())); setUsers(arr); });
-        const unsubC = db.collection('crm_customers').onSnapshot(snap => { const arr = []; snap.forEach(d => arr.push(d.data())); setCustomers(arr); });
-        const unsubT = db.collection('crm_tasks').onSnapshot(snap => { const arr = []; snap.forEach(d => arr.push(d.data())); setTasks(arr); });
-        return () => { unsubU(); unsubC(); unsubT(); };
-      }, [db]);
-
-      const writeData = async (collectionName, id, data) => {
-        if(db) {
-          try { await db.collection(collectionName).doc(id).set(data); } 
-          catch(e) { console.error("Write error:", e); showToast("พบปัญหาบันทึกข้อมูล โปรดเช็ค Firebase Rules"); }
-        }
-      };
-
-      const removeData = async (collectionName, id) => {
-        if(db) { try { await db.collection(collectionName).doc(id).delete(); } catch(e) { console.error("Delete error:", e); } }
-      };
-
-      const handleAuthSuccess = async (user) => {
-        const isNewUser = !users.find(u => u.id === user.id);
-        if(isNewUser) {
-           await writeData('crm_users', user.id, user);
-           notifyTelegram(`👤 <b>ผู้ใช้ใหม่ลงทะเบียน:</b>\nชื่อ: ${user.name}\nทีม: ${user.team} | สิทธิ์: ${user.role}`);
-        } else {
-           notifyTelegram(`🔑 <b>เข้าสู่ระบบ:</b>\nชื่อ: ${user.name}\nทีม: ${user.team}`);
-        }
-        // บันทึกการเข้าสู่ระบบลง LocalStorage
-        localStorage.setItem('crm_logged_in_user', JSON.stringify(user));
-        setCurrentUser(user);
-        setCurrentRoute('home');
-      };
-
-      const handleUpdateUser = async (updatedUser) => {
-        await writeData('crm_users', updatedUser.id, updatedUser);
-        if(currentUser && currentUser.id === updatedUser.id) {
-            setCurrentUser(updatedUser);
-            // อัปเดตข้อมูลที่จำไว้ด้วย
-            localStorage.setItem('crm_logged_in_user', JSON.stringify(updatedUser));
-        }
-        notifyTelegram(`⚙️ <b>อัปเดตข้อมูลผู้ใช้:</b>\nชื่อ: ${updatedUser.name}\nทีม: ${updatedUser.team}\nเป้ายอดขาย: ${formatCurrency(updatedUser.targetRevenue)}`);
-      };
-
-      const addCustomer = (data) => { 
-        writeData('crm_customers', data.id, { ...data, agent_id: currentUser.id }); 
-        showToast('บันทึกข้อมูลลูกค้าสำเร็จ!'); 
-        
-        if(data.status === 'ปิดการขาย') {
-            notifyTelegram(`🎉 <b>ปิดการขายสำเร็จ! (Closed Deal)</b>\nยอดเยี่ยมมาก! ${currentUser.name} เพิ่มและปิดการขายลูกค้า: ${data.name}\nยอดเบี้ยรวม: ${formatCurrency(data.premium)}`, TELEGRAM_CHAT_ID);
-        } else {
-            notifyTelegram(`🆕 <b>เพิ่ม Lead ใหม่:</b>\nชื่อ: ${data.name}\nเบอร์โทร: ${data.phone}\nโดย: ${currentUser.name}`);
-        }
-      };
-
-      const updateCustomer = (data, newlyAddedPolicies = []) => { 
-        const oldData = customers.find(c => c.id === data.id);
-        writeData('crm_customers', data.id, data); 
-        showToast('อัปเดตข้อมูลลูกค้าเรียบร้อย!'); 
-        
-        // 1. แจ้งเตือนเมื่อสถานะเปลี่ยนเป็น "ปิดการขาย"
-        if (oldData && oldData.status !== 'ปิดการขาย' && data.status === 'ปิดการขาย') {
-            notifyTelegram(`🎉 <b>ปิดการขายสำเร็จ! (Closed Deal)</b>\nยอดเยี่ยมมาก! ${currentUser.name} เพิ่งปิดการขายลูกค้า: ${data.name}\nยอดเบี้ยรวม: ${formatCurrency(data.premium)}\nแผน: ${data.interestedPlan || '-'}`, TELEGRAM_CHAT_ID);
-        } 
-        // 2. แจ้งเตือนเมื่อมีการกด "เพิ่มกรมธรรม์" ใหม่ (นับยอดเบี้ยที่เก็บได้)
-        else if (newlyAddedPolicies && newlyAddedPolicies.length > 0) {
-            newlyAddedPolicies.forEach(p => {
-                notifyTelegram(`💰 <b>แจ้งเก็บเบี้ยรับใหม่!</b>\nตัวแทน: ${currentUser.name}\nลูกค้า: ${data.name}\nแผน: ${p.planName}\nเบี้ยที่เก็บได้: ${formatCurrency(p.premium)}`, TELEGRAM_CHAT_ID);
-            });
-        }
-      };
-
-      const deleteCustomer = (id) => { 
-        const c = customers.find(x => x.id === id);
-        removeData('crm_customers', id); 
-        showToast('ลบข้อมูลลูกค้าเรียบร้อย!'); 
-        notifyTelegram(`🗑️ <b>ลบข้อมูลลูกค้า:</b>\nชื่อ: ${c ? c.name : id}\nโดย: ${currentUser.name}`);
-      };
-      
-      const addTask = (data) => { 
-        writeData('crm_tasks', data.id, { ...data, agent_id: currentUser.id }); 
-        showToast('เพิ่มงานสำเร็จ!'); 
-        notifyTelegram(`📝 <b>เพิ่มงานใหม่:</b>\nหัวข้อ: ${data.title}\nวันที่: ${data.date}\nโดย: ${currentUser.name}`);
-      };
-
-      const toggleTask = (id) => {
-          const t = tasks.find(x => x.id === id);
-          if(t) {
-             writeData('crm_tasks', t.id, { ...t, status: t.status === 'completed' ? 'pending' : 'completed' });
-             notifyTelegram(`✅ <b>อัปเดตสถานะงาน:</b>\nหัวข้อ: ${t.title}\nเป็น: ${t.status === 'completed' ? 'รอดำเนินการ' : 'เสร็จสิ้น'}\nโดย: ${currentUser.name}`);
-          }
-      };
-
-      const removeTask = (id) => {
-         const t = tasks.find(x => x.id === id);
-         removeData('crm_tasks', id);
-         if(t) notifyTelegram(`❌ <b>ลบงาน:</b>\nหัวข้อ: ${t.title}\nโดย: ${currentUser.name}`);
-      };
-
-      if (appState === 'loading') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50"><Icon name="spinner-gap" size={48} className="animate-spin mb-4 text-blue-500" /><p className="font-bold text-slate-400">กำลังเชื่อมต่อฐานข้อมูล...</p></div>;
-      if (!currentUser) return <AuthView onSuccess={handleAuthSuccess} users={users} />;
-
-      return (
-        <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-800">
-          {toastMsg && (
-            <div className="fixed top-6 right-6 z-[200] bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-top-10 fade-in duration-300">
-               <IconFill name="check-circle" size={24}/> <span className="font-black">{toastMsg}</span>
-            </div>
-          )}
-
-          {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
-          
-          <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col shadow-2xl lg:shadow-none`}>
-            <div className="h-24 flex items-center px-8 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/30">
-                  <Icon name="activity" className="text-white" size={24} />
-                </div>
-                <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 tracking-tight">IA CRM</span>
-              </div>
-              <button className="lg:hidden ml-auto text-slate-400 bg-slate-100 p-2 rounded-xl" onClick={() => setSidebarOpen(false)}><Icon name="x" size={20}/></button>
-            </div>
-            
-            <nav className="flex-1 overflow-y-auto p-5 space-y-2 custom-scrollbar">
-              <MenuLink icon="house" label="แดชบอร์ดหลัก" active={currentRoute === 'home'} onClick={() => {setCurrentRoute('home'); setSidebarOpen(false);}} color="text-blue-600" bg="bg-blue-50 border-blue-100" />
-              {currentUser.role === 'agent' && (
-                <>
-                  <MenuLink icon="user-plus" label="เพิ่ม Lead ใหม่" active={currentRoute === 'add-lead'} onClick={() => {setCurrentRoute('add-lead'); setSidebarOpen(false);}} color="text-orange-500" bg="bg-orange-50 border-orange-100" />
-                  <MenuLink icon="users" label="ฐานลูกค้าของฉัน" active={currentRoute === 'customers'} onClick={() => {setCurrentRoute('customers'); setSidebarOpen(false);}} color="text-emerald-500" bg="bg-emerald-50 border-emerald-100" />
-                  <MenuLink icon="funnel" label="Pipeline การขาย" active={currentRoute === 'pipeline'} onClick={() => {setCurrentRoute('pipeline'); setSidebarOpen(false);}} color="text-purple-500" bg="bg-purple-50 border-purple-100" />
-                  <MenuLink icon="trend-up" label="สถิติ KPI (Analytics)" active={currentRoute === 'analytics'} onClick={() => {setCurrentRoute('analytics'); setSidebarOpen(false);}} color="text-pink-500" bg="bg-pink-50 border-pink-100" />
-                  <MenuLink icon="brain" label="AI Assistant" active={currentRoute === 'ai-assistant'} onClick={() => {setCurrentRoute('ai-assistant'); setSidebarOpen(false);}} color="text-indigo-500" bg="bg-indigo-50 border-indigo-100" />
-                  <MenuLink icon="trophy" label="Team Ranking" active={currentRoute === 'ranking'} onClick={() => {setCurrentRoute('ranking'); setSidebarOpen(false);}} color="text-yellow-500" bg="bg-yellow-50 border-yellow-100" />
-                </>
-              )}
-              {currentUser.role === 'admin' && (
-                <>
-                  <MenuLink icon="shield-check" label="ภาพรวมองค์กร" active={currentRoute === 'home'} onClick={() => {setCurrentRoute('home'); setSidebarOpen(false);}} color="text-indigo-600" bg="bg-indigo-50 border-indigo-100" />
-                  <MenuLink icon="database" label="ฐานข้อมูลลูกค้าทั้งหมด" active={currentRoute === 'admin-customers'} onClick={() => {setCurrentRoute('admin-customers'); setSidebarOpen(false);}} color="text-emerald-600" bg="bg-emerald-50 border-emerald-100" />
-                </>
-              )}
-              <div className="pt-4 mt-4 border-t border-slate-100">
-                <MenuLink icon="qr-code" label="1QR+" active={false} href="https://agency-trainning.carrd.co/" onClick={() => setSidebarOpen(false)} color="text-teal-500" bg="bg-teal-50 border-teal-100" />
-                <MenuLink icon="gear" label="ตั้งค่าโปรไฟล์" active={currentRoute === 'settings'} onClick={() => {setCurrentRoute('settings'); setSidebarOpen(false);}} color="text-slate-600" bg="bg-slate-100 border-slate-200" />
-              </div>
-            </nav>
-
-            <div className="p-6 bg-slate-50 border-t border-slate-200">
-              <div className="flex items-center gap-4 mb-5">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center font-black text-white text-xl shadow-md border-2 border-white">
-                  {currentUser.name.charAt(0)}
-                </div>
-                <div className="truncate flex-1">
-                  <p className="text-sm font-black text-slate-800 truncate">{currentUser.name}</p>
-                  <p className="text-[10px] font-bold text-slate-500 bg-slate-200 inline-block px-2 py-0.5 rounded-md mt-1 uppercase tracking-widest">{currentUser.role === 'admin' ? 'ADMINISTRATOR' : currentUser.team}</p>
-                </div>
-              </div>
-              <button onClick={() => { localStorage.removeItem('crm_logged_in_user'); setCurrentUser(null); }} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-white border-2 border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all font-black text-sm">
-                <Icon name="sign-out" size={18} /> ออกจากระบบ
-              </button>
-            </div>
-          </aside>
-
-          <main className="flex-1 overflow-auto relative bg-slate-50/50">
-            <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-30 px-6 lg:px-10 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-4">
-                <button className="lg:hidden p-2.5 bg-white border-2 border-slate-200 rounded-xl text-slate-600" onClick={() => setSidebarOpen(true)}>
-                  <Icon name="list" size={24} />
-                </button>
-                <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight capitalize hidden sm:block">
-                  {currentRoute.replace('-', ' ')}
-                </h1>
-              </div>
-              <div className="flex items-center gap-4">
-                 <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border bg-emerald-50 border-emerald-100`}>
-                    <div className={`w-2.5 h-2.5 rounded-full animate-pulse bg-emerald-500`}></div>
-                    <span className={`text-xs font-black uppercase tracking-widest text-emerald-700`}>Cloud Sync</span>
-                 </div>
-              </div>
-            </header>
-
-            <div className="p-4 lg:p-10 max-w-[1600px] mx-auto space-y-10 pb-24 animate-in fade-in duration-500">
-              {currentUser.role === 'admin' ? (
-                 <>
-                   {currentRoute === 'home' && <AdminHomeView users={users} customers={customers} showToast={showToast} />}
-                   {currentRoute === 'admin-customers' && <AdminCustomersView customers={customers} users={users} updateCustomer={updateCustomer} deleteCustomer={deleteCustomer} />}
-                   {currentRoute === 'settings' && <SettingsView user={currentUser} handleUpdateUser={handleUpdateUser} showToast={showToast} />}
-                 </>
-              ) : (
-                 <>
-                    {currentRoute === 'home' && <AgentHomeView user={currentUser} customers={customers} tasks={tasks} addTask={addTask} toggleTask={toggleTask} removeTask={removeTask} handleUpdateUser={handleUpdateUser} updateCustomer={updateCustomer} deleteCustomer={deleteCustomer} />}
-                    {currentRoute === 'add-lead' && <AddLeadView onAdd={addCustomer} setRoute={setCurrentRoute} />}
-                    {currentRoute === 'customers' && <CustomersView user={currentUser} customers={customers} updateCustomer={updateCustomer} deleteCustomer={deleteCustomer} />}
-                    {currentRoute === 'pipeline' && <PipelineView customers={customers.filter(c => c.agent_id === currentUser.id)} />}
-                    {currentRoute === 'analytics' && <AnalyticsView customers={customers.filter(c => c.agent_id === currentUser.id)} />}
-                    {currentRoute === 'ranking' && <RankingView users={users} customers={customers} currentUser={currentUser} />}
-                    {currentRoute === 'ai-assistant' && <AIAssistantView />}
-                    {currentRoute === 'settings' && <SettingsView user={currentUser} handleUpdateUser={handleUpdateUser} showToast={showToast} />}
-                 </>
-              )}
-            </div>
-          </main>
-        </div>
-      );
-    }
-
-    function MenuLink({ icon, label, active, onClick, color, bg, href }) {
-      const className = `w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all font-black group ${active ? `${bg} ${color} border-2 shadow-sm transform scale-[1.02]` : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 border-2 border-transparent'}`;
-      
-      // ฟังก์ชันเปิดลิงก์ที่บังคับทำงานให้ได้ 100% ไม่ว่าจะติดบล็อกอะไรก็ตาม
-      const handleNavigation = (e) => {
-        if (onClick) onClick(e);
-        try {
-            // พยายามเปิดแท็บใหม่
-            const newWin = window.open(href, '_blank', 'noopener,noreferrer');
-            // ถ้าแอปหรือเบราว์เซอร์บล็อก (เช่น ในแชทไลน์ หรือ Iframe แบบจำกัด)
-            if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
-                window.location.href = href; // บังคับเปลี่ยนหน้าปัจจุบันไปเลย
-            }
-        } catch(err) {
-            window.location.href = href; // Fallback หากติด Error Strict Mode
-        }
-      };
-
-      if (href) {
-        return (
-          <button onClick={handleNavigation} className={className}>
-            <Icon name={icon} size={22} className={`${active ? color : 'text-slate-400 group-hover:'+color} transition-colors`} />
-            {label}
-          </button>
-        );
+    onSnapshot(getCol('appUsers'), (snap) => {
+      if (!snap.empty) {
+         window.appState.users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+         try { localStorage.setItem('cache_users', JSON.stringify(window.appState.users)); } catch(e){}
       }
       
-      return (
-        <button onClick={onClick} className={className}>
-          <Icon name={icon} size={22} className={`${active ? color : 'text-slate-400 group-hover:'+color} transition-colors`} />
-          {label}
-        </button>
-      );
+      if(window.appState.currentUser) {
+        const updatedMe = window.appState.users.find(u => u.id === window.appState.currentUser.id);
+        if(updatedMe) {
+          window.appState.currentUser = updatedMe;
+          try { localStorage.setItem('goldAppUser', JSON.stringify(updatedMe)); } catch(e){}
+          updateProfileUI();
+        }
+      }
+      renderAdminUsers();
+      updateDashboardStats();
+    }, (err) => console.warn("Sync paused"));
+
+    onSnapshot(getCol('transactions'), (snap) => {
+      if (!snap.empty) {
+         window.appState.transactions = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.date - a.date);
+         try { localStorage.setItem('cache_txs', JSON.stringify(window.appState.transactions)); } catch(e){}
+      }
+      
+      renderCustomerHistory();
+      renderAdminTransactions();
+      updateDashboardStats();
+    }, (err) => console.warn("Sync paused"));
+  };
+
+  window.switchAuthTab = (tab) => {
+    const formLogin = getEl('form-login');
+    if(formLogin) formLogin.classList.toggle('hidden', tab !== 'login');
+    
+    const formReg = getEl('form-register');
+    if(formReg) formReg.classList.toggle('hidden', tab !== 'register');
+    
+    const tabLog = getEl('tab-login');
+    if(tabLog) tabLog.style.background = tab === 'login' ? 'white' : 'transparent';
+    
+    const tabReg = getEl('tab-register');
+    if(tabReg) tabReg.style.background = tab === 'register' ? 'white' : 'transparent';
+    
+    if(tab === 'register') {
+      const secGroup = getEl('secret-code-group');
+      const s = window.appState.settings || {};
+      if(secGroup) secGroup.classList.toggle('hidden', s.hasSuperAdmin);
+    }
+  };
+
+  // Switch to Customer View
+  window.switchToCustomerView = () => {
+    hideEl('page-admin');
+    showEl('page-customer');
+    showEl('btn-switch-admin');
+    navCust('home');
+  };
+
+  // Switch to Admin View
+  window.switchToAdminView = () => {
+    hideEl('page-customer');
+    showEl('page-admin');
+    navAdmin('dashboard');
+  };
+
+  const routeUser = () => {
+    hideEl('page-login');
+    hideEl('page-customer');
+    hideEl('page-admin');
+    
+    showLoading(false);
+
+    if(!window.appState.currentUser) {
+      showEl('page-login');
+      return;
     }
 
-    // ============================================================================
-    // VIEWS
-    // ============================================================================
+    const role = window.appState.currentUser.role;
+    updateProfileUI();
 
-    function AuthView({ onSuccess, users }) {
-      const [isLogin, setIsLogin] = useState(true); 
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [name, setName] = useState('');
-      const [team, setTeam] = useState('');
-      const [errorMsg, setErrorMsg] = useState('');
+    if(role === 'superadmin' || role === 'subadmin') {
+      showEl('page-admin');
+      
+      const navSet = getEl('nav-settings');
+      if(navSet) navSet.classList.toggle('hidden', role !== 'superadmin');
+      
+      const navSetMob = getEl('nav-settings-mobile');
+      if(navSetMob) navSetMob.classList.toggle('hidden', role !== 'superadmin');
+      
+      showEl('btn-switch-admin');
+      navAdmin('dashboard');
+    } else {
+      showEl('page-customer');
+      hideEl('btn-switch-admin');
+      navCust('home');
+    }
+  };
 
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        setErrorMsg('');
+  window.logout = () => {
+    window.appState.currentUser = null;
+    try { localStorage.removeItem('goldAppUser'); } catch(e){}
+    routeUser();
+  };
 
-        if (isLogin) {
-          const user = users.find(u => (u.email || '').toLowerCase() === email.toLowerCase() && u.password === password);
-          if (user) onSuccess(user);
-          else setErrorMsg("รหัสผ่านหรืออีเมลไม่ถูกต้อง");
+  window.handleRegister = () => {
+    const name = getVal('reg-name').trim();
+    const phone = getVal('reg-phone').trim();
+    const pass = getVal('reg-pass');
+    const secret = getVal('reg-secret').trim();
+
+    if(!name || !phone || !pass) return showToast("กรุณากรอกข้อมูลให้ครบถ้วน", true);
+    
+    let isUsed = false;
+    if(window.appState.users && window.appState.users.length > 0) {
+       for(let i=0; i<window.appState.users.length; i++) {
+          if(window.appState.users[i].phone === phone) isUsed = true;
+       }
+    }
+    if(isUsed) return showToast("เบอร์โทรนี้ถูกใช้งานแล้ว", true);
+
+    showLoading(true);
+    
+    let role = 'customer';
+    const s = window.appState.settings || {};
+    
+    if(secret === '9999' && !s.hasSuperAdmin) {
+      role = 'superadmin';
+      window.appState.settings.hasSuperAdmin = true;
+      safeSetDoc(getDocRef('settings', 'global'), { hasSuperAdmin: true }, { merge: true });
+    } else if (secret === '9999') {
+      showToast("รหัสลับถูกใช้ไปแล้ว ไม่สามารถเป็น Super Admin ได้อีก", true);
+      showLoading(false);
+      return;
+    }
+
+    const docId = genId();
+    const newUser = { id: docId, phone: phone, password: pass, name: name, role: role, email: '', balance: 0, profilePicBase64: '', createdAt: Date.now() };
+    
+    safeSetDoc(getDocRef('appUsers', docId), newUser);
+    
+    window.appState.users.push(newUser);
+    try {
+       localStorage.setItem('cache_users', JSON.stringify(window.appState.users));
+       localStorage.setItem('goldAppUser', JSON.stringify(newUser));
+    } catch(e){}
+    window.appState.currentUser = newUser;
+    
+    showToast("สมัครสมาชิกสำเร็จ!");
+    routeUser();
+    setTimeout(() => { showLoading(false); }, 200);
+  };
+
+  window.handleLogin = () => {
+    const phone = getVal('login-phone').trim();
+    const pass = getVal('login-pass');
+    
+    let user = null;
+    if(window.appState.users && window.appState.users.length > 0) {
+       for(let i=0; i<window.appState.users.length; i++) {
+          if(window.appState.users[i].phone === phone && window.appState.users[i].password === pass) {
+             user = window.appState.users[i];
+             break;
+          }
+       }
+    }
+    
+    if(user) {
+      window.appState.currentUser = user;
+      try { localStorage.setItem('goldAppUser', JSON.stringify(user)); } catch(e){}
+      showToast("เข้าสู่ระบบสำเร็จ");
+      routeUser();
+    } else {
+      showToast("เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง", true);
+    }
+  };
+
+  const updateProfileUI = () => {
+    const u = window.appState.currentUser;
+    if(!u) return;
+    
+    const bal = u.balance || 0;
+    setText('pro-name', u.name);
+    setVal('edit-name', u.name);
+    setVal('edit-phone', u.phone);
+    setVal('edit-email', u.email || '');
+    
+    let rText = u.role === 'superadmin' ? 'ผู้ดูแลระบบหลัก' : (u.role === 'subadmin' ? 'ผู้ช่วยผู้ดูแล' : 'ลูกค้า');
+    setText('pro-role', rText);
+    setText('cust-balance', bal.toLocaleString());
+    setText('cust-withdraw-max', bal.toLocaleString());
+
+    if(u.profilePicBase64) {
+      const img1 = getEl('pro-avatar-img');
+      if(img1) { img1.src = u.profilePicBase64; img1.style.display = 'block'; }
+      
+      const imgFallback = getEl('pro-avatar-fallback');
+      if(imgFallback) imgFallback.style.display = 'none';
+      
+      const imgPrev = getEl('profile-preview');
+      if(imgPrev) { imgPrev.src = u.profilePicBase64; imgPrev.classList.remove('hidden'); }
+    }
+  };
+
+  window.updateProfile = () => {
+    const name = getVal('edit-name');
+    const email = getVal('edit-email');
+    const picInput = getEl('edit-profile-pic');
+    
+    showLoading(true);
+    
+    let updateData = { name: name, email: email };
+    if(picInput && picInput.dataset && picInput.dataset.base64) {
+      updateData.profilePicBase64 = picInput.dataset.base64;
+      window.appState.currentUser.profilePicBase64 = picInput.dataset.base64;
+    }
+    
+    window.appState.currentUser.name = name;
+    window.appState.currentUser.email = email;
+    safeUpdateDoc(getDocRef('appUsers', window.appState.currentUser.id), updateData);
+    
+    showToast("บันทึกโปรไฟล์สำเร็จ");
+    updateProfileUI();
+    setTimeout(() => { showLoading(false); }, 200);
+  };
+
+  window.updatePassword = () => {
+    const pass = getVal('edit-pass');
+    if(!pass) return showToast("กรุณากรอกรหัสผ่านใหม่", true);
+    
+    showLoading(true);
+    window.appState.currentUser.password = pass;
+    safeUpdateDoc(getDocRef('appUsers', window.appState.currentUser.id), { password: pass });
+    
+    showToast("เปลี่ยนรหัสผ่านสำเร็จ");
+    setVal('edit-pass', '');
+    setTimeout(() => { showLoading(false); }, 200);
+  };
+
+  window.navCust = (tab) => {
+    document.querySelectorAll('#page-customer .app-container').forEach(e => e.classList.add('hidden'));
+    document.querySelectorAll('#page-customer .bottom-nav .nav-item').forEach(e => e.classList.remove('active'));
+    
+    showEl(`cust-content-${tab}`);
+    const navItem = document.querySelector(`#page-customer .bottom-nav .nav-item[onclick="navCust('${tab}')"]`);
+    if(navItem) navItem.classList.add('active');
+    window.scrollTo(0, 0); 
+  };
+
+  window.submitDeposit = () => {
+    const amtEl = getEl('dep-amount');
+    const amount = amtEl ? parseFloat(amtEl.value) : 0;
+    const remark = getVal('dep-remark');
+    const slipInput = getEl('dep-slip');
+    const slipBase64 = (slipInput && slipInput.dataset) ? slipInput.dataset.base64 : '';
+
+    if(!amount || amount <= 0) return showToast("กรุณาระบุยอดเงินที่ถูกต้อง", true);
+    if(!slipBase64) return showToast("กรุณาแนบสลิปโอนเงิน", true);
+
+    showLoading(true);
+
+    const tx = {
+      id: genId(), 
+      userId: window.appState.currentUser ? window.appState.currentUser.id : '', 
+      userName: window.appState.currentUser ? window.appState.currentUser.name : '',
+      type: 'deposit', 
+      amount: amount, 
+      remark: remark, 
+      slipBase64: slipBase64, 
+      status: 'pending', 
+      date: Date.now()
+    };
+    
+    safeSetDoc(getDocRef('transactions', tx.id), tx);
+    window.appState.transactions.unshift(tx);
+    try { localStorage.setItem('cache_txs', JSON.stringify(window.appState.transactions)); } catch(e){}
+    
+    sendTgMsg(`📥 <b>แจ้งเตือนฝากออม</b>\nจาก: ${tx.userName}\nยอดเงิน: ฿${amount.toLocaleString()}\nสถานะ: รอตรวจสอบ`);
+    
+    setVal('dep-amount', '');
+    setVal('dep-remark', '');
+    const prev = getEl('dep-preview');
+    if(prev) prev.classList.add('hidden');
+    if(slipInput) { slipInput.value = ''; slipInput.dataset.base64 = ''; }
+    
+    showToast("ส่งคำขอฝากออมสำเร็จ รอตรวจสอบ");
+    renderCustomerHistory();
+    navCust('history');
+    setTimeout(() => { showLoading(false); }, 200);
+  };
+
+  window.submitWithdraw = () => {
+    const amtEl = getEl('wit-amount');
+    const amount = amtEl ? parseFloat(amtEl.value) : 0;
+    const remark = getVal('wit-remark');
+    const max = (window.appState.currentUser && window.appState.currentUser.balance) ? window.appState.currentUser.balance : 0;
+
+    if(!amount || amount <= 0) return showToast("กรุณาระบุยอดเงินที่ถูกต้อง", true);
+    if(amount > max) return showToast("ยอดเงินออมไม่เพียงพอ", true);
+
+    showLoading(true);
+
+    const tx = {
+      id: genId(), 
+      userId: window.appState.currentUser ? window.appState.currentUser.id : '', 
+      userName: window.appState.currentUser ? window.appState.currentUser.name : '',
+      type: 'withdraw', 
+      amount: amount, 
+      remark: remark, 
+      status: 'pending', 
+      date: Date.now()
+    };
+    
+    safeSetDoc(getDocRef('transactions', tx.id), tx);
+    window.appState.transactions.unshift(tx);
+    try { localStorage.setItem('cache_txs', JSON.stringify(window.appState.transactions)); } catch(e){}
+    
+    sendTgMsg(`📤 <b>แจ้งเตือนขอถอนเงิน/แลกทอง</b>\nจาก: ${tx.userName}\nยอดเงิน: ฿${amount.toLocaleString()}\nหมายเหตุ: ${remark}\nสถานะ: รอตรวจสอบ`);
+    
+    setVal('wit-amount', '');
+    setVal('wit-remark', '');
+    
+    showToast("ส่งคำขอถอนสำเร็จ รอร้านยืนยัน");
+    renderCustomerHistory();
+    navCust('history');
+    setTimeout(() => { showLoading(false); }, 200);
+  };
+
+  const renderCustomerHistory = () => {
+    let txs = [];
+    const myId = window.appState.currentUser ? window.appState.currentUser.id : null;
+    
+    if(window.appState.transactions) {
+       for(let i=0; i<window.appState.transactions.length; i++) {
+          if(window.appState.transactions[i].userId === myId) txs.push(window.appState.transactions[i]);
+       }
+    }
+
+    const renderList = (containerId, limit = 0) => {
+      const el = getEl(containerId);
+      if(!el) return;
+      el.innerHTML = '';
+      
+      let list = txs;
+      if(limit > 0 && txs.length > limit) {
+         list = txs.slice(0, limit);
+      }
+      
+      if(list.length === 0) { el.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">ยังไม่มีรายการธุรกรรม</div>'; return; }
+
+      list.forEach(t => {
+        let icon = t.type==='deposit' ? '📥' : '📤';
+        let color = t.type==='deposit' ? 'var(--green)' : 'var(--red)';
+        let statusBadge = t.status==='approved' ? '<span class="badge bg-green">สำเร็จ</span>' : (t.status==='rejected' ? '<span class="badge bg-red">ถูกปฏิเสธ</span>' : '<span class="badge bg-yellow">รออนุมัติ</span>');
+        let d = new Date(t.date).toLocaleString('th-TH');
+        
+        let amt = t.amount ? t.amount : 0;
+        
+        el.innerHTML += `
+          <div class="flex justify-between items-center tx-item-history" style="padding: 14px 0; border-bottom: 1px solid #eee;">
+            <div class="flex items-center gap-3">
+              <div style="font-size: 20px; background:var(--gray-light); padding:12px; border-radius:14px; flex-shrink:0;">${icon}</div>
+              <div style="min-width: 0;">
+                <div style="font-weight:600; font-size:15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.type==='deposit' ? 'ฝากออม' : 'ถอนแลกทอง'}</div>
+                <div style="font-size:12px; color:var(--gray);">${d}</div>
+              </div>
+            </div>
+            <div class="tx-amount-col">
+              <div style="font-weight:700; color:${color}; font-size:15px;">฿${amt.toLocaleString()}</div>
+              <div style="margin-top:4px;">${statusBadge}</div>
+            </div>
+          </div>
+        `;
+      });
+    };
+    renderList('cust-recent-tx', 3);
+    renderList('cust-all-history', 0);
+  };
+
+  window.navAdmin = (sec) => {
+    document.querySelectorAll('#admin-content-area > div').forEach(e => {
+       if(e.id !== 'admin-page-title' && e.id.indexOf('title') === -1 && !e.classList.contains('admin-topbar')) e.classList.add('hidden');
+    });
+    
+    document.querySelectorAll('.admin-nav-item, .admin-bottom-nav .nav-item').forEach(e => e.classList.remove('active'));
+    
+    showEl(`admin-sec-${sec}`);
+    
+    const elDesktop = document.querySelector(`.admin-sidebar .admin-nav-item[onclick="navAdmin('${sec}')"]`);
+    if(elDesktop) elDesktop.classList.add('active');
+
+    const elMobile = document.querySelector(`.admin-bottom-nav .nav-item[onclick="navAdmin('${sec}')"]`);
+    if(elMobile) elMobile.classList.add('active');
+    
+    const titles = { dashboard: 'ภาพรวมระบบ', transactions: 'รายการธุรกรรม', users: 'จัดการผู้ใช้งาน', settings: 'ตั้งค่าร้านค้า' };
+    const titleText = titles[sec] || sec;
+    setText('admin-page-title', titleText);
+    setText('admin-page-title-mobile', titleText);
+    
+    window.scrollTo(0, 0);
+  };
+
+  window.toggleAdminSidebar = () => {};
+
+  const updateDashboardStats = () => {
+    let bal = 0;
+    let usersCount = 0;
+    
+    if(window.appState.users) {
+       for(let i=0; i<window.appState.users.length; i++) {
+          bal += (window.appState.users[i].balance || 0);
+          if(window.appState.users[i].role !== 'superadmin') usersCount++;
+       }
+    }
+    
+    let pending = 0;
+    if(window.appState.transactions) {
+       for(let i=0; i<window.appState.transactions.length; i++) {
+          if(window.appState.transactions[i].status === 'pending') pending++;
+       }
+    }
+    
+    setText('stat-total-balance', bal.toLocaleString());
+    setText('stat-total-users', usersCount);
+    setText('stat-pending', pending);
+    
+    const badgeDesktop = getEl('admin-badge-tx');
+    if(badgeDesktop) {
+        badgeDesktop.textContent = pending;
+        badgeDesktop.classList.toggle('hidden', pending === 0);
+    }
+    const badgeMobile = getEl('admin-badge-tx-mobile');
+    if(badgeMobile) {
+        badgeMobile.textContent = pending;
+        badgeMobile.classList.toggle('hidden', pending === 0);
+    }
+  };
+
+  const renderAdminTransactions = () => {
+    const tbody = document.querySelector('#table-tx tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    if(!window.appState.transactions) return;
+
+    window.appState.transactions.forEach(t => {
+      let tr = document.createElement('tr');
+      let statusStr = t.status==='approved' ? '<span class="badge bg-green">สำเร็จ</span>' : (t.status==='rejected' ? '<span class="badge bg-red">ปฏิเสธ</span>' : '<span class="badge bg-yellow">รอตรวจสอบ</span>');
+      let d = new Date(t.date).toLocaleString('th-TH');
+      let slipBtn = t.slipBase64 ? `<button class="btn btn-sm btn-outline" style="padding:6px 10px; font-size:12px;" onclick="viewSlip('${t.id}')">รูปสลิป</button>` : '-';
+      
+      let actionBtns = '-';
+      let amt = t.amount ? t.amount : 0;
+      let rm = t.remark ? t.remark : '-';
+
+      if(t.status === 'pending') {
+        if(t.type === 'deposit') {
+          actionBtns = `<button class="btn btn-sm btn-success" onclick="approveTx('${t.id}')">✓ อนุมัติ</button> <button class="btn btn-sm btn-danger" onclick="rejectTx('${t.id}')">✗ ปฏิเสธ</button>`;
         } else {
-          if(users.find(u => (u.email || '').toLowerCase() === email.toLowerCase())) return setErrorMsg("อีเมลนี้มีการลงทะเบียนแล้ว");
-          const role = email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'agent';
-          const newUser = { id: Date.now().toString(), name, email, password, team: role === 'admin' ? 'HQ Management' : team, role, targetRevenue: 100000, telegramChatId: '' };
-          onSuccess(newUser);
+          actionBtns = `<button class="btn btn-sm btn-success" onclick="openEditWithdraw('${t.id}', ${amt})">พิจารณาถอน</button> <button class="btn btn-sm btn-danger" onclick="rejectTx('${t.id}')">ปฏิเสธ</button>`;
         }
-      };
+      }
 
-      return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"></div>
-          <div className="bg-white rounded-[3rem] shadow-2xl p-8 sm:p-12 w-full max-w-lg relative z-10 animate-in zoom-in-95 duration-500">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl transform rotate-3"><Icon name="activity" className="text-white" size={40} /></div>
-              <h2 className="text-4xl font-black text-slate-800 tracking-tight">IA CRM</h2>
-              <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-xs">Platform สำหรับนักขายมืออาชีพ</p>
-            </div>
+      tr.innerHTML = `
+        <td style="color:var(--gray); font-size:13px;">${d}</td>
+        <td><b>${t.userName}</b></td>
+        <td><span class="badge ${t.type==='deposit'?'bg-green':'bg-red'}">${t.type==='deposit'?'ฝากออม':'ถอนทอง'}</span></td>
+        <td style="font-weight:bold; color:${t.type==='deposit'?'var(--green)':'var(--red)'}; font-size:15px;">฿${amt.toLocaleString()}</td>
+        <td><div style="font-size:13px; max-width: 150px; overflow:hidden; text-overflow:ellipsis;" title="${rm}">${rm}</div>${slipBtn}</td>
+        <td>${statusStr}</td>
+        <td><div class="flex gap-2">${actionBtns}</div></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
 
-            {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-2xl flex items-center gap-3 text-red-600 font-bold text-sm"><Icon name="warning-circle" size={20} /> {errorMsg}</div>}
+  const renderAdminUsers = () => {
+    const tbody = document.querySelector('#table-users tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    const myRole = window.appState.currentUser ? window.appState.currentUser.role : '';
+    const myId = window.appState.currentUser ? window.appState.currentUser.id : '';
 
-            <div className="flex bg-slate-100 p-2 rounded-2xl mb-8 border border-slate-200">
-              <button type="button" onClick={() => {setIsLogin(true); setErrorMsg('');}} className={`flex-1 py-3 font-black text-sm rounded-xl transition-all ${isLogin ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500'}`}>เข้าสู่ระบบ</button>
-              <button type="button" onClick={() => {setIsLogin(false); setErrorMsg('');}} className={`flex-1 py-3 font-black text-sm rounded-xl transition-all ${!isLogin ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500'}`}>ลงทะเบียนใหม่</button>
-            </div>
+    if(!window.appState.users) return;
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-700 ml-1 uppercase">อีเมล</label>
-                <div className="relative"><Icon name="envelope" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20}/><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full pl-12 pr-5 py-4 rounded-2xl border-2 border-slate-200 font-bold outline-none focus:border-blue-500" placeholder="name@example.com" /></div>
-              </div>
+    window.appState.users.forEach(u => {
+      let tr = document.createElement('tr');
+      let rText = u.role === 'superadmin' ? '<span class="badge bg-gold">Super Admin</span>' : (u.role === 'subadmin' ? '<span class="badge bg-green">Admin</span>' : '<span class="badge" style="background:#eee; color:var(--black)">ลูกค้า</span>');
+      
+      let actionBtns = '-';
+      if(myRole === 'superadmin' && u.id !== myId) {
+        let toggleRole = u.role === 'customer' ? `<button class="btn btn-sm btn-outline" onclick="changeRole('${u.id}', 'subadmin')">ตั้งเป็น Admin</button>` : `<button class="btn btn-sm btn-outline" style="border-color:var(--red); color:var(--red)" onclick="changeRole('${u.id}', 'customer')">ปลด Admin</button>`;
+        actionBtns = toggleRole;
+      }
+      
+      let userAvatar = u.profilePicBase64 ? `<img src="${u.profilePicBase64}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;">` : `<div style="width:36px; height:36px; border-radius:50%; background:var(--gray-light); display:flex; align-items:center; justify-content:center; font-size:16px;">👤</div>`;
+      let bal = u.balance ? u.balance : 0;
 
-              {!isLogin && (
-                <>
-                  <div className="space-y-2"><label className="text-xs font-black text-slate-700 ml-1 uppercase">ชื่อ - นามสกุล</label><div className="relative"><Icon name="user" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20}/><input required type="text" value={name} onChange={e=>setName(e.target.value)} className="w-full pl-12 pr-5 py-4 rounded-2xl border-2 border-slate-200 font-bold outline-none focus:border-blue-500" placeholder="ระบุชื่อจริง นามสกุล" /></div></div>
-                  <div className="space-y-2"><label className="text-xs font-black text-slate-700 ml-1 uppercase">ชื่อทีม</label><div className="relative"><Icon name="users" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20}/><input required type="text" value={team} onChange={e=>setTeam(e.target.value)} className="w-full pl-12 pr-5 py-4 rounded-2xl border-2 border-slate-200 font-bold outline-none focus:border-blue-500" placeholder="เช่น ทีมมังกรทอง" /></div></div>
-                </>
-              )}
+      tr.innerHTML = `
+        <td>${userAvatar}</td>
+        <td><b style="font-size:15px;">${u.name}</b></td>
+        <td style="color:var(--gray);">${u.phone}</td>
+        <td>${rText}</td>
+        <td style="font-weight:bold; color:var(--gold-dark); font-size:15px;">฿${bal.toLocaleString()}</td>
+        <td>${actionBtns}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
 
-              <div className="space-y-2"><label className="text-xs font-black text-slate-700 ml-1 uppercase">รหัสผ่าน</label><div className="relative"><Icon name="lock" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20}/><input required type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full pl-12 pr-5 py-4 rounded-2xl border-2 border-slate-200 font-bold outline-none focus:border-blue-500" placeholder="••••••••" /></div></div>
-              <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl transform hover:-translate-y-1 text-lg mt-8 transition-all">{isLogin ? 'เข้าสู่ระบบ' : 'ลงทะเบียนและเริ่มต้นใช้งาน'}</button>
-            </form>
-          </div>
-        </div>
-      );
+  window.changeRole = (uid, newRole) => {
+    if(confirm(`ต้องการเปลี่ยนสิทธิ์ผู้ใช้นี้เป็น ${newRole} ใช่หรือไม่?`)) {
+      showLoading(true);
+      
+      let targetUser = null;
+      for(let i=0; i<window.appState.users.length; i++){
+         if(window.appState.users[i].id === uid) targetUser = window.appState.users[i];
+      }
+      
+      if(targetUser) targetUser.role = newRole;
+      safeUpdateDoc(getDocRef('appUsers', uid), { role: newRole });
+      
+      renderAdminUsers();
+      showToast("เปลี่ยนสิทธิ์สำเร็จ");
+      setTimeout(() => { showLoading(false); }, 200);
+    }
+  };
+
+  window.viewSlip = (txId) => {
+    let tx = null;
+    for(let i=0; i<window.appState.transactions.length; i++){
+       if(window.appState.transactions[i].id === txId) tx = window.appState.transactions[i];
+    }
+    
+    if(tx && tx.slipBase64) {
+      const img = getEl('slip-image-full');
+      if(img) { img.src = tx.slipBase64; openModal('modal-view-slip'); }
+    }
+  };
+
+  window.openEditWithdraw = (txId, reqAmount) => {
+    pendingTxId = txId;
+    setText('mw-req-amt', (reqAmount || 0).toLocaleString());
+    setVal('mw-app-amt', reqAmount || 0);
+    openModal('modal-edit-withdraw');
+  };
+
+  window.confirmApproveWithdraw = () => {
+    const el = getEl('mw-app-amt');
+    const appAmt = el ? parseFloat(el.value) : 0;
+    if(isNaN(appAmt) || appAmt <= 0) return showToast("ยอดเงินไม่ถูกต้อง", true);
+    closeModal('modal-edit-withdraw');
+    processTx(pendingTxId, 'approved', appAmt);
+  };
+
+  window.approveTx = (txId) => {
+    if(confirm("ยืนยันการอนุมัติรายการนี้?")) {
+      processTx(txId, 'approved');
+    }
+  };
+
+  window.rejectTx = (txId) => {
+    const reason = prompt("ระบุเหตุผลที่ปฏิเสธ (ถ้ามี):");
+    if(reason !== null) {
+      processTx(txId, 'rejected', null, reason);
+    }
+  };
+
+  const processTx = (txId, status, overrideAmount = null, rejectReason = "") => {
+    showLoading(true);
+    
+    let tx = null;
+    if(window.appState.transactions) {
+       for(let i=0; i<window.appState.transactions.length; i++) {
+          if(window.appState.transactions[i].id === txId) tx = window.appState.transactions[i];
+       }
+    }
+    
+    if(!tx) { showLoading(false); return; }
+
+    let user = null;
+    if(window.appState.users) {
+       for(let i=0; i<window.appState.users.length; i++) {
+          if(window.appState.users[i].id === tx.userId) user = window.appState.users[i];
+       }
     }
 
-    function AgentHomeView({ user, customers, tasks, addTask, toggleTask, removeTask, handleUpdateUser, updateCustomer, deleteCustomer }) {
-      const [isEditingTarget, setEditingTarget] = useState(false);
-      const [tempTarget, setTempTarget] = useState(user.targetRevenue || 100000);
-      const [newTaskStr, setNewTaskStr] = useState('');
-      const [newTaskDate, setNewTaskDate] = useState(getTodayStr());
-      const [selectedAlertCustomer, setSelectedAlertCustomer] = useState(null);
-      
-      const myCustomers = customers.filter(c => c.agent_id === user.id);
-      const myTasks = tasks.filter(t => t.agent_id === user.id);
-      
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      const monthRev = myCustomers.reduce((acc, c) => {
-        if (c.status === 'ปิดการขาย' && c.closedDate) {
-          const d = new Date(c.closedDate);
-          if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) return acc + (Number(c.premium) || 0);
+    let finalAmount = overrideAmount !== null ? overrideAmount : (tx.amount ? tx.amount : 0);
+
+    if(status === 'approved' && user) {
+      let newBalance = user.balance ? user.balance : 0;
+      if(tx.type === 'deposit') newBalance += finalAmount;
+      else if(tx.type === 'withdraw') {
+        if(finalAmount > newBalance) {
+          showToast("ลูกค้ามียอดไม่พอให้หัก", true);
+          showLoading(false);
+          return;
         }
-        return acc;
-      }, 0);
-      const progress = Math.min(100, Math.round((monthRev / (user.targetRevenue || 1)) * 100));
-
-      // --- SMART ALERTS (5 Rules) ---
-      const alerts = useMemo(() => {
-        const arr = [];
-        const today = new Date();
-        
-        myCustomers.forEach(c => {
-          if(c.appointmentDate) {
-            const diff = Math.ceil((new Date(c.appointmentDate) - today) / (1000*60*60*24));
-            if(diff === 0) arr.push({ title: 'นัดพบ/โทร วันนี้!', desc: `คุณมีนัดกับ ${c.name}`, icon: 'calendar-check', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', customer: c });
-            else if(diff > 0 && diff <= 3) arr.push({ title: 'นัดหมายเร็วๆ นี้', desc: `นัด ${c.name} ใน ${diff} วัน (${toBuddhistYear(c.appointmentDate)})`, icon: 'clock', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-200', customer: c });
-          }
-          if(c.dob) {
-            const bday = new Date(c.dob); bday.setFullYear(today.getFullYear());
-            if(bday < today && today.getMonth() > bday.getMonth()) bday.setFullYear(today.getFullYear() + 1);
-            const diff = Math.ceil((bday - today) / (1000*60*60*24));
-            if(diff >= 0 && diff <= 7) arr.push({ title: 'วันเกิดลูกค้า', desc: `${c.name} ครบรอบวันเกิดในอีก ${diff} วัน`, icon: 'gift', color: 'text-pink-600', bg: 'bg-pink-50 border-pink-200', customer: c });
-          }
-          if(c.policies) {
-            c.policies.forEach(p => {
-              const diff = Math.ceil((new Date(p.endDate) - today) / (1000*60*60*24));
-              if(diff >= 0 && diff <= 30) arr.push({ title: 'แจ้งเตือนต่ออายุ', desc: `กรมธรรม์ ${p.planName} ของ ${c.name} จะหมดใน ${diff} วัน`, icon: 'file-text', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200', customer: c });
-            });
-          }
-          if(c.status !== 'ปิดการขาย' && c.lastContact) {
-            const diff = Math.ceil((today - new Date(c.lastContact)) / (1000*60*60*24));
-            if(diff > 30) arr.push({ title: 'Lead ไม่มีการอัปเดต', desc: `${c.name} ขาดการติดต่อนาน ${diff} วันแล้ว`, icon: 'warning-circle', color: 'text-red-600', bg: 'bg-red-50 border-red-200', customer: c });
-          }
-          if(c.status === 'ปิดการขาย' && c.closedDate) {
-            const diff = Math.ceil((today - new Date(c.closedDate)) / (1000*60*60*24));
-            if(diff >= 90 && diff <= 95) arr.push({ title: 'ดูแลหลังการขาย (Aftercare)', desc: `ปิดการขาย ${c.name} ครบ 3 เดือนแล้ว โทรไปทักทายหน่อย`, icon: 'phone-call', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200', customer: c });
-          }
-        });
-        return arr;
-      }, [myCustomers]);
-
-      // --- TELEGRAM DAILY DIGEST ---
-      const todaysTasks = useMemo(() => myTasks.filter(t => t.date === getTodayStr() && t.status !== 'completed'), [myTasks]);
-
-      useEffect(() => {
-        if(alerts.length > 0 || todaysTasks.length > 0) {
-           const todayStr = getTodayStr(); 
-           const storageKey = `telegram_notified_${user.id}_${todayStr}`;
-           
-           if(!localStorage.getItem(storageKey)) {
-              
-              // แยกลูกค้าที่ขาดการติดต่อออกมา
-              const inactiveAlerts = alerts.filter(a => a.title === 'Lead ไม่มีการอัปเดต');
-              const otherAlerts = alerts.filter(a => a.title !== 'Lead ไม่มีการอัปเดต');
-
-              // 1. ส่งแจ้งเตือนงานทั่วไปเข้าส่วนตัว (หรือเข้ากลุ่มถ้าไม่มีส่วนตัว)
-              if (todaysTasks.length > 0 || otherAlerts.length > 0) {
-                  let msg = `📅 <b>สรุปงานและแจ้งเตือนประจำวัน</b>\nคุณ: ${user.name}\n\n`;
-                  
-                  if (todaysTasks.length > 0) {
-                      msg += `📝 <b>สิ่งที่ต้องทำวันนี้ (Tasks):</b>\n`;
-                      todaysTasks.forEach(t => {
-                          msg += `• [ ] ${t.title}\n`;
-                      });
-                      msg += `\n`;
-                  }
-
-                  if (otherAlerts.length > 0) {
-                      msg += `💡 <b>Smart Alerts:</b>\n`;
-                      otherAlerts.forEach(a => {
-                          msg += `• <b>${a.title}:</b> ${a.desc}\n`;
-                      });
-                  }
-
-                  msg += `\n<i>เข้าสู่ระบบ IA CRM เพื่อจัดการงานวันนี้เลย!</i>`;
-                  notifyTelegram(msg, user.telegramChatId || TELEGRAM_CHAT_ID);
-              }
-
-              // 2. แจ้งเตือนขาดการติดต่อ บังคับส่งเข้า "ห้องรวม" แยกแต่ละ User เสมอ
-              if (inactiveAlerts.length > 0) {
-                  let inactiveMsg = `⚠️ <b>แจ้งเตือนลูกค้าขาดการติดต่อ (เกิน 30 วัน)</b>\n👤 ตัวแทน: ${user.name}\n\n`;
-                  inactiveAlerts.forEach(a => {
-                      inactiveMsg += `• ${a.desc}\n`;
-                  });
-                  inactiveMsg += `\n<i>กรุณาอัปเดตการดูแลลูกค้าในระบบด่วน!</i>`;
-                  notifyTelegram(inactiveMsg, TELEGRAM_CHAT_ID);
-              }
-
-              localStorage.setItem(storageKey, 'true'); 
-           }
-        }
-      }, [alerts, todaysTasks, user.id, user.name, user.telegramChatId]);
-
-      return (
-        <div className="space-y-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-[3rem] p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none"></div>
-              <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
-                <div>
-                  <p className="text-blue-100 font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2"><Icon name="crosshair" size={18}/> เป้ายอดขายเดือนนี้</p>
-                  {isEditingTarget ? (
-                    <div className="flex gap-3">
-                      <input type="number" value={tempTarget} onChange={e=>setTempTarget(e.target.value)} className="bg-white text-slate-900 px-5 py-3 rounded-2xl font-black w-48 text-xl focus:ring-4 focus:ring-orange-400/50 outline-none" />
-                      <button onClick={() => { handleUpdateUser({...user, targetRevenue: Number(tempTarget)}); setEditingTarget(false); }} className="bg-orange-500 px-6 rounded-2xl font-black shadow-lg hover:bg-orange-600 transition">SAVE</button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-4">
-                      <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">{formatCurrency(user.targetRevenue)}</h2>
-                      <button onClick={() => setEditingTarget(true)} className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition backdrop-blur-md"><Icon name="pencil-simple" size={20}/></button>
-                    </div>
-                  )}
-                </div>
-                <div className="text-left md:text-right bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-md w-full md:w-auto shadow-inner">
-                  <p className="text-blue-100 font-bold text-sm uppercase tracking-widest mb-2">ยอดขายที่ทำได้ (เดือนนี้)</p>
-                  <h3 className="text-4xl font-black text-amber-300">{formatCurrency(monthRev)}</h3>
-                </div>
-              </div>
-              <div className="mt-12">
-                <div className="flex justify-between text-sm font-black uppercase tracking-widest mb-3">
-                  <span className="text-blue-100">ความคืบหน้า</span>
-                  <span className="bg-white text-blue-800 px-3 py-1 rounded-lg shadow-sm">{progress}%</span>
-                </div>
-                <div className="h-5 bg-blue-900/50 rounded-full overflow-hidden p-1 border border-white/10 shadow-inner">
-                  <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-1000 relative" style={{width: `${progress}%`}}></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[3rem] p-8 lg:p-10 shadow-sm border border-slate-100 flex flex-col justify-center gap-6">
-              <h4 className="font-black text-slate-800 text-xl flex items-center gap-3"><Icon name="star" className="text-yellow-400" size={28}/> AI แนะนำงานวันนี้</h4>
-              <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-[2rem] border-2 border-indigo-100 relative shadow-inner flex-1 flex flex-col justify-center">
-                 <Icon name="brain" className="absolute top-6 right-6 text-indigo-200" size={40} />
-                 {myCustomers.filter(c=>c.status==='ติดตามผล').length > 0 ? (
-                   <p className="text-base font-bold text-indigo-900 leading-relaxed z-10 relative">
-                     คุณมีลูกค้าสถานะ <span className="text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md">ติดตามผล</span> จำนวน {myCustomers.filter(c=>c.status==='ติดตามผล').length} ราย แนะนำให้โฟกัสติดต่อไปยังรายที่มี AI Score สูงกว่า 80
-                   </p>
-                 ) : (
-                   <p className="text-base font-bold text-indigo-900 leading-relaxed z-10 relative">สุดยอดมาก! วันนี้คุณจัดการข้อมูลลูกค้าได้ดีเยี่ยม ลองเพิ่ม Lead ใหม่เพื่อสร้างฐานลูกค้าให้เติบโตยิ่งขึ้น</p>
-                 )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[650px] overflow-hidden">
-              <div className="p-8 lg:p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <div>
-                  <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3"><Icon name="bell-ringing" className="text-red-500" size={32}/> Smart Alerts</h3>
-                  <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">ระบบแจ้งเตือนอัจฉริยะ 5 ระดับ</p>
-                </div>
-                {alerts.length > 0 && <span className="bg-red-500 text-white text-sm font-black px-4 py-2 rounded-full shadow-md animate-pulse">{alerts.length}</span>}
-              </div>
-              <div className="flex-1 overflow-y-auto p-8 space-y-5 custom-scrollbar bg-slate-50/30">
-                {alerts.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400"><Icon name="check-circle" size={64} className="mb-4 text-emerald-400" /><p className="font-black text-xl">เคลียร์ทุกการแจ้งเตือนแล้ว 🎉</p></div>
-                )}
-                {alerts.map((a, i) => (
-                  <div key={i} onClick={() => setSelectedAlertCustomer(a.customer)} className={`group p-6 rounded-[2rem] border-2 flex items-start gap-5 transition-all hover:-translate-y-1 cursor-pointer ${a.bg} shadow-sm hover:shadow-md`}>
-                    <div className={`p-4 bg-white rounded-2xl ${a.color} shadow-sm`}><Icon name={a.icon} size={28}/></div>
-                    <div className="flex-1 pt-1">
-                      <h5 className={`font-black text-lg ${a.color}`}>{a.title}</h5>
-                      <p className="text-sm font-bold text-slate-700 mt-2 leading-relaxed">{a.desc}</p>
-                      <p className="text-xs font-black text-blue-500 mt-3 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">ดูข้อมูลลูกค้า <Icon name="caret-right" size={14}/></p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[650px] overflow-hidden">
-               <div className="p-8 lg:p-10 border-b border-slate-100 bg-slate-50/50">
-                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3"><Icon name="calendar-plus" className="text-blue-500" size={32}/> ตารางงาน (Tasks)</h3>
-                 <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">จัดการสิ่งที่คุณต้องทำในแต่ละวัน</p>
-               </div>
-               <div className="p-6 border-b border-slate-100 bg-white">
-                  <form onSubmit={(e) => { e.preventDefault(); if(newTaskStr){ addTask({id: Date.now().toString(), title: newTaskStr, date: newTaskDate, status: 'pending'}); setNewTaskStr(''); } }} className="flex flex-col sm:flex-row gap-3">
-                    <div className="w-full sm:w-auto">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-2">วันที่ (ค.ศ.)</p>
-                      <input type="date" value={newTaskDate} onChange={e=>setNewTaskDate(e.target.value)} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-slate-200 outline-none focus:border-blue-500 font-bold" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-2">รายละเอียดงาน</p>
-                      <div className="flex gap-2">
-                        <input type="text" placeholder="เพิ่มงานที่ต้องทำ..." value={newTaskStr} onChange={e=>setNewTaskStr(e.target.value)} className="flex-1 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-slate-200 outline-none focus:border-blue-500 font-bold" />
-                        <button type="submit" className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-blue-700 transition">เพิ่ม</button>
-                      </div>
-                    </div>
-                  </form>
-               </div>
-               <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar bg-slate-50/30">
-                 {myTasks.length === 0 && <p className="text-center py-20 text-slate-400 font-black text-xl">ไม่มีงานค้าง เยี่ยมมาก! 🎉</p>}
-                 {myTasks.sort((a,b) => new Date(a.date) - new Date(b.date)).map(t => (
-                   <div key={t.id} className={`flex items-start justify-between p-5 rounded-2xl border-2 transition-all group ${t.status === 'completed' ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-white border-slate-200 hover:border-blue-300 shadow-sm'}`}>
-                     <div className="flex items-start gap-5">
-                       <button onClick={() => toggleTask(t.id)} className={`mt-0.5 w-8 h-8 rounded-xl border-2 flex items-center justify-center ${t.status === 'completed' ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' : 'border-slate-300 bg-slate-50'}`}>
-                         {t.status === 'completed' && <Icon name="check-circle" size={20}/>}
-                       </button>
-                       <div>
-                         <span className={`font-black text-lg ${t.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-800'}`}>{t.title}</span>
-                         <p className="text-xs font-bold text-slate-500 mt-2 flex items-center gap-1.5 bg-slate-100 w-fit px-3 py-1 rounded-lg uppercase tracking-widest"><Icon name="calendar" size={14}/> {t.date === getTodayStr() ? 'วันนี้' : toBuddhistYear(t.date)}</p>
-                       </div>
-                     </div>
-                     <button onClick={() => removeTask(t.id)} className="text-red-400 hover:text-red-600 bg-red-50 p-2.5 rounded-xl transition"><Icon name="trash" size={20}/></button>
-                   </div>
-                 ))}
-               </div>
-            </div>
-          </div>
-          {selectedAlertCustomer && <CustomerModal customer={selectedAlertCustomer} onClose={() => setSelectedAlertCustomer(null)} onSave={updateCustomer} onDelete={deleteCustomer} />}
-        </div>
-      );
+        newBalance -= finalAmount;
+      }
+      user.balance = newBalance;
+      safeUpdateDoc(getDocRef('appUsers', user.id), { balance: newBalance });
     }
 
-    // --- ADD LEAD VIEW ---
-    function AddLeadView({ onAdd, setRoute }) {
-      const [formData, setFormData] = useState({ 
-        name: '', gender: 'Male', dob: '', phone: '', lineId: '', 
-        age: 0, occupation: '', income: '30,000 - 50,000', status: 'ลีดใหม่',
-        familyStatus: 'โสด', children: 0, hasOldPolicy: false, oldPremium: 0, oldPolicyDetails: '',
-        interestedPlan: '', leadSource: 'Facebook Ads', appointmentDate: '', note: ''
-      });
-
-      const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        let newVal = type === 'checkbox' ? checked : value;
-        if(name === 'dob') setFormData(prev => ({ ...prev, [name]: newVal, age: calculateAge(newVal) }));
-        else setFormData(prev => ({ ...prev, [name]: newVal }));
-      };
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        const isClosed = formData.status === 'ปิดการขาย';
-        onAdd({
-            ...formData, 
-            id: Date.now().toString(), 
-            lastContact: getTodayStr(), 
-            ai_score: Math.floor(Math.random()*40)+50, 
-            premium: 0, 
-            policies: [],
-            careHistory: [],
-            closedDate: isClosed ? getTodayStr() : null 
-        });
-        setRoute('customers');
-      };
-
-      return (
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div><h2 className="text-4xl font-black text-slate-800 flex items-center gap-3"><Icon name="user-plus" className="text-orange-500" size={40}/> เพิ่ม Lead ใหม่</h2><p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-sm">กรอกข้อมูลผู้มุ่งหวังให้ครบถ้วนเพื่อผลลัพธ์ที่ดีที่สุด</p></div>
-
-          <form onSubmit={handleSubmit} className="bg-white rounded-[3rem] shadow-sm border border-slate-100 p-8 lg:p-12 space-y-12">
-            {/* Section 1 */}
-            <div>
-              <h3 className="font-black text-xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3"><Icon name="users" size={24} className="text-blue-500"/> ข้อมูลส่วนตัว</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">ชื่อ - นามสกุล *</label><input required type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none font-black text-slate-800" /></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">เพศ</label><select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-slate-800"><option value="Male">ชาย</option><option value="Female">หญิง</option></select></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">ว/ด/ป เกิด (ค.ศ.)</label><input type="date" name="dob" value={formData.dob} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-slate-800" /></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">อายุ (ออโต้)</label><input type="number" readOnly value={formData.age} className="w-full px-5 py-4 border-2 border-slate-100 rounded-2xl bg-slate-50 text-slate-500 font-black cursor-not-allowed" /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">สถานะครอบครัว</label><select name="familyStatus" value={formData.familyStatus} onChange={handleChange} className="w-full px-4 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black"><option>โสด</option><option>สมรส</option><option>หย่าร้าง</option></select></div>
-                  <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">จำนวนบุตร</label><input type="number" name="children" value={formData.children} onChange={handleChange} min="0" className="w-full px-4 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-center" /></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2 */}
-            <div>
-              <h3 className="font-black text-xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3"><Icon name="phone" size={24} className="text-emerald-500"/> ติดต่อ & อาชีพ</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">เบอร์โทรศัพท์ *</label><input required type="text" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-slate-800" /></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Line ID</label><input type="text" name="lineId" value={formData.lineId} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-slate-800" /></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">อาชีพ</label><input type="text" name="occupation" value={formData.occupation} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-slate-800" /></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">รายได้ต่อเดือน</label><select name="income" value={formData.income} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black"><option>ต่ำกว่า 15,000</option><option>15,000 - 30,000</option><option>30,000 - 50,000</option><option>50,000 - 100,000</option><option>100,000+</option></select></div>
-              </div>
-            </div>
-
-            {/* Section 3 */}
-            <div>
-              <h3 className="font-black text-xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3"><Icon name="briefcase" size={24} className="text-purple-500"/> ข้อมูลประกัน</h3>
-              <div className="space-y-6">
-                <label className="flex items-center gap-4 bg-purple-50 p-6 rounded-2xl border-2 border-purple-200 cursor-pointer shadow-inner">
-                  <input type="checkbox" name="hasOldPolicy" checked={formData.hasOldPolicy} onChange={handleChange} className="w-6 h-6 text-purple-600 rounded-lg" />
-                  <span className="font-black text-purple-900 text-lg">ลูกค้ามีประกันเดิมอยู่แล้ว</span>
-                </label>
-                {formData.hasOldPolicy && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-8 rounded-3xl border-2 border-slate-200 shadow-sm animate-in fade-in zoom-in duration-300">
-                    <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">เบี้ยประกันเดิม (ต่อปี)</label><input type="number" name="oldPremium" value={formData.oldPremium} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black" /></div>
-                    <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">รายละเอียดกรมธรรม์เดิม</label><input type="text" name="oldPolicyDetails" value={formData.oldPolicyDetails} onChange={handleChange} placeholder="เช่น สุขภาพเหมาจ่าย AIA" className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black" /></div>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                  <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">แผนที่สนใจ</label><input type="text" name="interestedPlan" value={formData.interestedPlan} onChange={handleChange} placeholder="เช่น สะสมทรัพย์ 15/25" className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black text-slate-800" /></div>
-                  <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">สถานะ Lead แรกเริ่ม</label><select name="status" value={formData.status} onChange={handleChange} className="w-full px-5 py-4 border-2 border-orange-200 rounded-2xl bg-orange-50 text-orange-700 font-black outline-none text-lg">{STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4 */}
-            <div>
-              <h3 className="font-black text-xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3"><Icon name="calendar" size={24} className="text-pink-500"/> การติดตาม & นัดหมาย</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">แหล่งที่มา (Lead Source)</label><select name="leadSource" value={formData.leadSource} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black"><option>Facebook Ads</option><option>Tiktok</option><option>Walk-in</option><option>Referral (แนะนำ)</option></select></div>
-                <div><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">วันที่นัดหมาย (เข้าพบ/นัดโทร)</label><input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-black" /></div>
-                <div className="md:col-span-2"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">หมายเหตุเพิ่มเติม</label><textarea name="note" value={formData.note} onChange={handleChange} rows={4} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-bold text-slate-800"></textarea></div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-5 pt-10 border-t-2 border-slate-100">
-              <button type="button" onClick={() => setRoute('home')} className="px-8 py-4 rounded-2xl font-black text-slate-500 hover:bg-slate-100 transition text-lg">ยกเลิก</button>
-              <button type="submit" className="px-12 py-4 rounded-2xl font-black text-white bg-gradient-to-r from-orange-500 to-red-500 shadow-xl shadow-orange-500/40 transform hover:-translate-y-1 transition text-lg"><Icon name="floppy-disk" size={24} className="inline mr-2"/> บันทึกข้อมูล Lead</button>
-            </div>
-          </form>
-        </div>
-      );
+    tx.status = status;
+    let updateData = { status: status };
+    if(overrideAmount !== null) { tx.amount = overrideAmount; updateData.amount = overrideAmount; }
+    if(rejectReason) {
+      const rm = tx.remark ? tx.remark : '';
+      tx.remark = rm + ` [ปฏิเสธ: ${rejectReason}]`;
+      updateData.remark = tx.remark;
     }
 
-    // --- CUSTOMERS VIEW ---
-    function CustomersView({ user, customers, updateCustomer, deleteCustomer }) {
-      const [activeTab, setActiveTab] = useState('ทั้งหมด');
-      const [searchTerm, setSearchTerm] = useState('');
-      const [selectedCustomer, setSelectedCustomer] = useState(null);
+    safeUpdateDoc(getDocRef('transactions', txId), updateData);
+    
+    try {
+      localStorage.setItem('cache_users', JSON.stringify(window.appState.users));
+      localStorage.setItem('cache_txs', JSON.stringify(window.appState.transactions));
+    } catch(e){}
+    
+    renderAdminTransactions();
+    renderAdminUsers();
+    updateDashboardStats();
+    
+    let statTh = status==='approved'?'✅ อนุมัติสำเร็จ':'❌ ถูกปฏิเสธ';
+    sendTgMsg(`อัปเดตสถานะธุรกรรม\nผู้ใช้: ${tx.userName}\nประเภท: ${tx.type==='deposit'?'ฝาก':'ถอน'}\nยอด: ฿${finalAmount.toLocaleString()}\nสถานะ: ${statTh}`);
+    
+    showToast("ดำเนินการสำเร็จ");
+    setTimeout(() => { showLoading(false); }, 200);
+  };
 
-      const myCustomers = customers.filter(c => c.agent_id === user.id);
-      
-      const filtered = myCustomers.filter(c => {
-        const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.phone || '').includes(searchTerm);
-        let matchStatus = false;
-        
-        if (activeTab === 'ทั้งหมด') {
-            matchStatus = true;
-        } else if (activeTab === 'ขาดการติดต่อ') {
-            const diff = c.lastContact ? Math.ceil((new Date() - new Date(c.lastContact)) / (1000*60*60*24)) : 0;
-            matchStatus = diff > 30 && c.status !== 'ปิดการขาย';
+  const updateSettingsUI = () => {
+    const s = window.appState.settings || {};
+    
+    const sName = s.shopName ? s.shopName : 'พรีเมียมออมทอง';
+    setText('cust-header-name', sName);
+    setText('admin-shop-name', sName);
+    setText('admin-shop-name-sidebar', sName);
+    setText('login-shop-name', sName); 
+    
+    setText('cust-bank-name', s.bankName ? s.bankName : '-');
+    setText('cust-bank-accname', s.bankAccName ? s.bankAccName : '-');
+    setText('cust-bank-accno', s.bankAccNo ? s.bankAccNo : '-');
+    
+    const lineIdVal = s.lineId ? s.lineId : '';
+    const lineLinkVal = s.lineLink ? s.lineLink : '';
+    const phoneVal = s.phone ? s.phone : '';
+    
+    let contactHtml = '';
+    if (phoneVal) contactHtml += `<div style="margin-bottom:8px;">📞 โทร: <a href="tel:${phoneVal}" style="color:var(--gold-dark); text-decoration:none; font-weight:700;">${phoneVal}</a></div>`;
+    if (lineIdVal) contactHtml += `<div style="margin-bottom:12px;">💬 Line ID: <span style="color:var(--gold-dark); font-weight:700;">${lineIdVal}</span></div>`;
+    
+    const elDetails = getEl('cust-shop-contact-details');
+    if (elDetails) elDetails.innerHTML = contactHtml ? contactHtml : '-';
+    
+    const elBtn = getEl('cust-shop-contact-btn');
+    if (elBtn) {
+        if (lineLinkVal) {
+            let safeLink = lineLinkVal.startsWith('http') ? lineLinkVal : `https://${lineLinkVal}`;
+            elBtn.innerHTML = `<a href="${safeLink}" target="_blank" class="btn btn-success" style="display:inline-flex; width:100%; text-decoration:none; padding:12px 16px; font-size:15px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">✅ คลิกเพิ่มเพื่อน Line ติดต่อร้าน</a>`;
         } else {
-            matchStatus = c.status === activeTab;
+            elBtn.innerHTML = '';
         }
-        
-        return matchSearch && matchStatus;
-      });
-
-      return (
-        <div className="space-y-8">
-          <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 mb-4">
-            <div>
-              <h2 className="text-4xl font-black text-slate-800 flex items-center gap-3"><Icon name="database" className="text-emerald-500" size={40}/> ฐานข้อมูลลูกค้า</h2>
-              <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-sm">ค้นหา กรอง และจัดการข้อมูลลูกค้าในมือคุณ</p>
-            </div>
-            <div className="relative w-full md:w-96">
-              <Icon name="magnifying-glass" className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-              <input type="text" placeholder="ค้นหาชื่อ, เบอร์โทร..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full pl-14 pr-5 py-4 border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none shadow-sm font-black" />
-            </div>
-          </div>
-
-          <div className="flex overflow-x-auto custom-scrollbar gap-3 pb-4">
-            {['ทั้งหมด', ...STATUS_LIST, 'ขาดการติดต่อ'].map(tab => {
-              let count = 0;
-              if (tab === 'ทั้งหมด') {
-                  count = myCustomers.length;
-              } else if (tab === 'ขาดการติดต่อ') {
-                  count = myCustomers.filter(c => {
-                      const diff = c.lastContact ? Math.ceil((new Date() - new Date(c.lastContact)) / (1000*60*60*24)) : 0;
-                      return diff > 30 && c.status !== 'ปิดการขาย';
-                  }).length;
-              } else {
-                  count = myCustomers.filter(c => c.status === tab).length;
-              }
-              
-              return (
-                 <button key={tab} onClick={() => setActiveTab(tab)} className={`px-8 py-3.5 rounded-2xl font-black whitespace-nowrap transition-all border-2 text-sm ${activeTab === tab ? (tab === 'ขาดการติดต่อ' ? 'bg-red-500 text-white border-red-500 shadow-xl transform -translate-y-1' : 'bg-blue-600 text-white border-blue-600 shadow-xl transform -translate-y-1') : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
-                   {tab} <span className={`ml-3 px-3 py-1 rounded-lg text-xs font-black ${activeTab === tab ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>{count}</span>
-                 </button>
-              )
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filtered.map(c => (
-              <div key={c.id} className="bg-white rounded-[2.5rem] p-8 border-2 border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all relative overflow-hidden group">
-                <div className={`absolute top-0 right-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 opacity-20 ${c.status === 'ปิดการขาย' ? 'bg-emerald-500' : c.status === 'ลีดใหม่' ? 'bg-blue-500' : 'bg-orange-500'}`}></div>
-                
-                <div className="flex justify-between items-start mb-6 relative z-10">
-                  <div className="flex items-center gap-4">
-                     <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors text-xl">{(c.name || '?').charAt(0)}</div>
-                     <div><h3 className="font-black text-xl text-slate-800">{c.name}</h3><p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1 font-bold"><Icon name="phone" size={14}/> {c.phone}</p></div>
-                  </div>
-                </div>
-
-                <div className="mb-6"><span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-black border-2 uppercase tracking-widest ${c.status === 'ปิดการขาย' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : c.status === 'ลีดใหม่' ? 'bg-blue-50 border-blue-200 text-blue-700' : c.status === 'เสนอแบบ' ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-orange-50 border-orange-200 text-orange-700'}`}>{c.status}</span></div>
-
-                <div className="space-y-3 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                  <div className="flex justify-between text-sm border-b border-slate-200 pb-3"><span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">นัดล่าสุด</span><span className="font-black text-slate-800">{c.appointmentDate ? toBuddhistYear(c.appointmentDate) : '-'}</span></div>
-                  <div className="flex justify-between text-sm border-b border-slate-200 pb-3"><span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">AI Score</span><span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 text-lg">{c.ai_score || 0}/100</span></div>
-                  <div className="flex justify-between text-sm items-center"><span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">แผนที่สนใจ</span><span className="font-black text-blue-600 truncate max-w-[140px] text-right">{c.interestedPlan || '-'}</span></div>
-                </div>
-
-                <button onClick={() => setSelectedCustomer(c)} className="w-full py-4 bg-white hover:bg-blue-50 text-blue-600 font-black rounded-2xl transition border-2 border-slate-200 hover:border-blue-300 flex items-center justify-center gap-2">ดู / แก้ไขข้อมูล <Icon name="caret-right" size={18}/></button>
-              </div>
-            ))}
-            {filtered.length === 0 && <div className="col-span-full bg-white p-20 rounded-[3rem] text-center border-2 border-slate-100"><Icon name="database" size={80} className="mx-auto text-slate-200 mb-6" /><h3 className="text-3xl font-black text-slate-600">ไม่พบข้อมูลลูกค้า</h3></div>}
-          </div>
-
-          {selectedCustomer && <CustomerModal customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} onSave={updateCustomer} onDelete={deleteCustomer} />}
-        </div>
-      );
     }
-
-    // --- MODAL ---
-    function CustomerModal({ customer, onClose, onSave, onDelete }) {
-      const [formData, setFormData] = useState({ ...customer });
-      const [isAddingPolicy, setIsAddingPolicy] = useState(false);
-      const [newPolicy, setNewPolicy] = useState({ planName: '', policyNo: '', cycle: 'รายปี', startDate: '', endDate: '', premium: '' });
-      const [isAiLoading, setIsAiLoading] = useState(false);
-      const [aiInsight, setAiInsight] = useState(null);
-      const [deleteConfirm, setDeleteConfirm] = useState(false);
-      const [newlyAddedPoliciesForAlert, setNewlyAddedPoliciesForAlert] = useState([]);
-      const [newCareNote, setNewCareNote] = useState('');
-
-      const handleChange = (e) => {
-        const { name, value } = e.target;
-        if(name === 'dob') setFormData(prev => ({ ...prev, [name]: value, age: calculateAge(value) }));
-        else setFormData(prev => ({ ...prev, [name]: value }));
-      };
-
-      const handleSave = () => {
-        if(formData.status === 'ปิดการขาย' && customer.status !== 'ปิดการขาย') {
-            formData.closedDate = getTodayStr();
-        }
-        if (!formData.lastContact) formData.lastContact = getTodayStr(); 
-        
-        onSave(formData, newlyAddedPoliciesForAlert); 
-        onClose();
-      };
-
-      const handleAddPolicy = () => {
-        if(!newPolicy.planName || !newPolicy.endDate) return alert("กรุณากรอกชื่อแผนและวันต่ออายุ");
-        const parsedPremium = Number(newPolicy.premium || 0);
-        
-        const policyToAdd = { ...newPolicy, premium: parsedPremium };
-
-        setFormData(prev => ({ 
-          ...prev, 
-          premium: Number(prev.premium || 0) + parsedPremium,
-          policies: [...(prev.policies || []), policyToAdd] 
-        }));
-
-        setNewlyAddedPoliciesForAlert(prev => [...prev, policyToAdd]);
-
-        setIsAddingPolicy(false);
-        setNewPolicy({ planName: '', policyNo: '', cycle: 'รายปี', startDate: '', endDate: '', premium: '' });
-      };
-
-      const handleAddCareNote = () => {
-        if(!newCareNote.trim()) return alert("กรุณากรอกรายละเอียดการติดต่อ");
-        const newHistory = [...(formData.careHistory || []), { date: getTodayStr(), note: newCareNote.trim() }];
-        setFormData(prev => ({ 
-          ...prev, 
-          careHistory: newHistory,
-          lastContact: getTodayStr() // อัปเดตวันที่ติดต่อล่าสุดอัตโนมัติเมื่อมีการเพิ่มบันทึก
-        }));
-        setNewCareNote('');
-      };
-
-      const generateAiInsight = () => {
-        setIsAiLoading(true);
-        setTimeout(() => {
-          let insight = "";
-          if (formData.status === 'ปิดการขาย') insight = `AI (Aftercare): ลูกค้าปิดการขายแผน ${formData.interestedPlan} ไปแล้ว แนะนำให้รักษาสัมพันธ์และนำเสนอแผนควบการลงทุนเพิ่มเติมในปีหน้า`;
-          else if (formData.status === 'นัดหมาย') insight = `AI (Closing Strategy): ลูกค้ามีรายได้ ${formData.income} และสนใจแผน ${formData.interestedPlan} มีโอกาสปิดการขาย 85% เตรียมข้อมูลเรื่องภาษีไปนำเสนอเพิ่มเติม`;
-          else insight = `AI วิเคราะห์: ลูกค้ามีสถานะ ${formData.status} แนะนำให้ส่งบทความสั้นๆ ทาง Line (${formData.lineId || 'เบอร์โทร'}) ก่อนโทรคุย`;
-          setAiInsight(insight); setIsAiLoading(false);
-        }, 1500);
-      };
-
-      return (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 sm:p-6">
-          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-10 py-6 border-b border-slate-100 flex justify-between items-center bg-white z-10">
-              <div><h2 className="text-3xl font-black text-slate-800">{formData.name}</h2><p className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-1">จัดการข้อมูลและอัปเดตสถานะการขาย</p></div>
-              <button onClick={onClose} className="text-slate-400 hover:bg-slate-100 p-3 rounded-2xl transition"><Icon name="x" size={24}/></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-10 custom-scrollbar bg-slate-50/50">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-10">
-                  {/* QUICK STATUS EDIT */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
-                    <div className="space-y-3"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest">ปรับสถานะ</label><select name="status" value={formData.status} onChange={handleChange} className="w-full px-5 py-4 border-2 border-blue-200 rounded-2xl bg-blue-50 font-black text-blue-800 outline-none text-lg">{STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                    <div className="space-y-3"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest">ยอดขายรวมลูกค้ารายนี้</label><input type="number" name="premium" value={formData.premium} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl bg-slate-50 outline-none font-black text-lg text-slate-800" /></div>
-                    <div className="space-y-3"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest">วันนัดหมายต่อไป</label><input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={handleChange} className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl bg-slate-50 outline-none font-black text-slate-700" /></div>
-                    <div className="space-y-3">
-                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">วันที่ติดต่อล่าสุด</label>
-                       <div className="flex gap-2">
-                          <input type="date" name="lastContact" value={formData.lastContact || ''} onChange={handleChange} className="w-full px-3 py-4 border-2 border-slate-200 rounded-2xl bg-slate-50 outline-none font-black text-slate-700" />
-                          <button type="button" onClick={() => setFormData(prev => ({...prev, lastContact: getTodayStr()}))} className="bg-blue-50 border-2 border-blue-100 text-blue-600 px-3 rounded-2xl font-black hover:bg-blue-100 transition" title="อัปเดตเป็นวันนี้"><Icon name="arrows-clockwise" size={20}/></button>
-                       </div>
-                    </div>
-                  </div>
-
-                  {/* EDITABLE DETAILS (แสดงข้อมูลครบถ้วน) */}
-                  <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
-                    <h3 className="font-black text-slate-800 mb-6 text-2xl border-b-2 border-slate-100 pb-4 flex items-center gap-3"><Icon name="user" size={28} className="text-blue-500"/> ข้อมูลรายละเอียดลูกค้า</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">ชื่อ-นามสกุล</label><input type="text" name="name" value={formData.name || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black" /></div>
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">เบอร์โทร</label><input type="text" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black" /></div>
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">Line ID</label><input type="text" name="lineId" value={formData.lineId || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black" /></div>
-                      
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">เพศ</label><select name="gender" value={formData.gender || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black"><option value="Male">ชาย</option><option value="Female">หญิง</option></select></div>
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">วันเกิด (ค.ศ.)</label><input type="date" name="dob" value={formData.dob || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black" /></div>
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">อายุ (ปี)</label><input type="number" readOnly value={formData.age || 0} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-100 text-slate-500 font-black cursor-not-allowed" /></div>
-                      
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">อาชีพ</label><input type="text" name="occupation" value={formData.occupation || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black" /></div>
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">รายได้ต่อเดือน</label><select name="income" value={formData.income || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black"><option>ต่ำกว่า 15,000</option><option>15,000 - 30,000</option><option>30,000 - 50,000</option><option>50,000 - 100,000</option><option>100,000+</option></select></div>
-                      <div className="space-y-2"><label className="block text-xs font-black text-slate-400">แผนที่สนใจ</label><input type="text" name="interestedPlan" value={formData.interestedPlan || ''} onChange={handleChange} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-black text-blue-600" /></div>
-                      
-                      <div className="lg:col-span-3 space-y-2"><label className="block text-xs font-black text-slate-400">หมายเหตุเพิ่มเติม</label><textarea name="note" value={formData.note || ''} onChange={handleChange} rows={2} className="w-full px-4 py-3 border-2 rounded-xl bg-slate-50 font-bold" /></div>
-                    </div>
-                  </div>
-
-                  {/* CONTACT & CARE HISTORY (ฟีเจอร์เพิ่มบันทึกการพูดคุย) */}
-                  <div className="bg-blue-50/50 rounded-[2rem] p-8 border-2 border-blue-100 shadow-inner">
-                    <h3 className="font-black text-blue-800 mb-6 text-2xl flex items-center gap-3"><Icon name="chats-circle" size={32}/> บันทึกการติดต่อ & ดูแลลูกค้า</h3>
-                    
-                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                      <input type="text" value={newCareNote} onChange={e => setNewCareNote(e.target.value)} placeholder="รายละเอียดการพูดคุย / อัปเดตลูกค้า..." className="flex-1 px-5 py-4 border-2 border-blue-200 rounded-2xl outline-none font-bold text-slate-700 bg-white focus:border-blue-400" />
-                      <button type="button" onClick={handleAddCareNote} className="px-8 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-lg"><Icon name="plus" size={20}/> เพิ่มบันทึก</button>
-                    </div>
-
-                    <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                      {(!formData.careHistory || formData.careHistory.length === 0) ? (
-                        <div className="bg-white p-6 rounded-2xl text-center border-2 border-blue-100 border-dashed"><p className="text-blue-500 font-bold text-sm">ยังไม่มีประวัติการติดต่อ</p></div>
-                      ) : (
-                        [...formData.careHistory].reverse().map((h, i) => (
-                          <div key={i} className="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                            <div className="bg-blue-100 text-blue-700 px-4 py-1.5 rounded-xl text-xs font-black whitespace-nowrap"><Icon name="calendar" className="inline mr-1" size={14}/> {toBuddhistYear(h.date)}</div>
-                            <div className="font-bold text-slate-700 text-sm leading-relaxed">{h.note}</div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* POLICIES */}
-                  {formData.status === 'ปิดการขาย' && (
-                    <div className="bg-emerald-50/50 rounded-[2rem] p-8 border-2 border-emerald-200 shadow-inner">
-                      <div className="flex justify-between items-center mb-8">
-                        <div><h3 className="font-black text-emerald-800 flex items-center gap-3 text-2xl"><Icon name="shield-check" size={32}/> กรมธรรม์ที่ซื้อแล้ว</h3></div>
-                        <button onClick={() => setIsAddingPolicy(!isAddingPolicy)} className="px-6 py-3 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 flex items-center gap-2 shadow-lg"><Icon name="plus" size={20}/> เพิ่มกรมธรรม์</button>
-                      </div>
-
-                      {isAddingPolicy && (
-                        <div className="bg-white p-6 rounded-3xl border-2 border-emerald-200 mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 shadow-md animate-in fade-in">
-                          <div className="md:col-span-2"><label className="text-[10px] font-black text-slate-400 mb-1 block">ชื่อแผน</label><input type="text" value={newPolicy.planName} onChange={(e)=>setNewPolicy({...newPolicy, planName: e.target.value})} className="w-full border-2 rounded-xl px-4 py-2 font-black" /></div>
-                          <div><label className="text-[10px] font-black text-slate-400 mb-1 block">เลขกรมธรรม์</label><input type="text" value={newPolicy.policyNo} onChange={(e)=>setNewPolicy({...newPolicy, policyNo: e.target.value})} className="w-full border-2 rounded-xl px-4 py-2 font-black" /></div>
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 mb-1 block">รอบชำระ</label>
-                            <select value={newPolicy.cycle} onChange={(e)=>setNewPolicy({...newPolicy, cycle: e.target.value})} className="w-full border-2 rounded-xl px-4 py-2 font-black">
-                                <option value="รายเดือน">รายเดือน</option>
-                                <option value="ราย 3 เดือน">ราย 3 เดือน</option>
-                                <option value="ราย 6 เดือน">ราย 6 เดือน</option>
-                                <option value="รายปี">รายปี</option>
-                            </select>
-                          </div>
-                          <div className="lg:col-span-2"><label className="text-[10px] font-black text-red-400 mb-1 block">วันต่ออายุ *</label><input type="date" value={newPolicy.endDate} onChange={(e)=>setNewPolicy({...newPolicy, endDate: e.target.value})} className="w-full border-2 border-orange-200 bg-orange-50 rounded-xl px-4 py-2 font-black text-orange-800" /></div>
-                          <div className="lg:col-span-2"><label className="text-[10px] font-black text-emerald-600 mb-1 block">ค่าเบี้ย</label><input type="number" value={newPolicy.premium} onChange={(e)=>setNewPolicy({...newPolicy, premium: e.target.value})} className="w-full border-2 border-emerald-200 bg-emerald-50 rounded-xl px-4 py-2 font-black text-emerald-800" /></div>
-                          <button onClick={handleAddPolicy} className="md:col-span-2 lg:col-span-4 py-3 bg-emerald-500 text-white rounded-xl font-black mt-2">บันทึกข้อมูลกรมธรรม์</button>
-                        </div>
-                      )}
-
-                      {(!formData.policies || formData.policies.length === 0) ? (
-                        <div className="bg-white p-8 rounded-3xl text-center border-2 border-emerald-100 border-dashed"><p className="text-emerald-600 font-black">ยังไม่มีข้อมูลกรมธรรม์</p></div>
-                      ) : (
-                        <div className="space-y-4">
-                          {formData.policies.map((p, i) => (
-                            <div key={i} className="bg-white p-6 rounded-[2rem] border-2 border-emerald-100 flex flex-wrap justify-between items-center gap-5 shadow-sm">
-                              <div>
-                                <p className="font-black text-xl text-slate-800">{p.planName}</p>
-                                <p className="text-xs font-black text-slate-400 mt-2 uppercase tracking-widest">เลข: {p.policyNo || '-'} | รอบ: {p.cycle} | เบี้ย: <span className="text-emerald-600">{formatCurrency(p.premium)}</span></p>
-                              </div>
-                              <div className="text-right bg-orange-50 px-6 py-3 rounded-2xl border border-orange-100"><p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">วันต่ออายุ</p><p className="font-black text-orange-700 text-xl">{toBuddhistYear(p.endDate)}</p></div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* AI INSIGHT */}
-                <div className="lg:col-span-1">
-                   <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-[2rem] p-8 text-white shadow-xl h-full flex flex-col relative overflow-hidden">
-                      <Icon name="sparkle" className="absolute top-4 right-4 text-indigo-400 opacity-50" size={64}/>
-                      <h3 className="font-black text-xl flex items-center gap-3 mb-6 z-10"><Icon name="brain" size={28}/> AI วิเคราะห์แนะนำ</h3>
-                      <div className="flex-1 bg-white/10 rounded-2xl p-6 z-10 flex flex-col justify-center">
-                        {aiInsight ? <p className="text-indigo-50 font-bold leading-relaxed">{aiInsight}</p> : <div className="text-center"><Icon name="brain" size={48} className="mx-auto mb-4 text-indigo-300 opacity-50" /><p className="text-indigo-200 font-semibold text-sm">กดวิเคราะห์ข้อมูล</p></div>}
-                      </div>
-                      <button onClick={generateAiInsight} disabled={isAiLoading} className="w-full mt-6 bg-indigo-500 hover:bg-indigo-400 text-white font-black py-4 rounded-xl shadow-lg transition z-10">{isAiLoading ? 'กำลังประมวลผล...' : 'วิเคราะห์ข้อมูลลูกค้าทันที'}</button>
-                   </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 lg:px-10 py-6 border-t border-slate-100 bg-white flex justify-between z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-              {deleteConfirm ? (
-                 <div className="flex gap-2">
-                    <button onClick={() => setDeleteConfirm(false)} className="px-6 py-3 bg-slate-100 rounded-xl font-black text-slate-600">ยกเลิก</button>
-                    <button onClick={() => { onDelete(customer.id); onClose(); }} className="px-6 py-3 bg-red-600 rounded-xl font-black text-white shadow-lg">ยืนยันการลบ!</button>
-                 </div>
-              ) : (
-                 <button onClick={() => setDeleteConfirm(true)} className="px-6 py-3 text-red-500 hover:bg-red-50 rounded-2xl font-black transition flex items-center gap-2"><Icon name="trash" size={20}/> ลบข้อมูล</button>
-              )}
-              <div className="flex gap-4">
-                <button onClick={onClose} className="px-8 py-4 text-slate-500 hover:bg-slate-100 rounded-2xl font-black transition">ปิดหน้าต่าง</button>
-                <button onClick={handleSave} className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-500/40 text-lg">บันทึกการแก้ไข</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // --- PIPELINE VIEW ---
-    function PipelineView({ customers }) {
-      return (
-        <div className="space-y-8 h-[calc(100vh-160px)] flex flex-col">
-          <div><h2 className="text-4xl font-black text-slate-800 flex items-center gap-3"><Icon name="funnel" className="text-purple-500" size={40}/> Sales Pipeline</h2><p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-sm">บอร์ดสรุปขั้นตอนการขายของลูกค้าทั้งหมด</p></div>
-          <div className="flex gap-6 overflow-x-auto pb-6 custom-scrollbar flex-1 items-start">
-            {STATUS_LIST.map((status, idx) => {
-              const list = customers.filter(c => c.status === status);
-              return (
-                <div key={status} className="bg-slate-100/70 rounded-[2.5rem] p-6 min-w-[340px] w-[340px] border-2 border-slate-200/50 max-h-full overflow-y-auto custom-scrollbar shadow-inner">
-                  <h3 className="font-black text-slate-700 mb-6 flex justify-between items-center text-xl">{status} <span className="bg-white px-3.5 py-1 rounded-xl text-sm shadow-sm">{list.length}</span></h3>
-                  <div className="space-y-4">
-                    {list.map(c => (
-                      <div key={c.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 border-l-8 hover:shadow-md transition-all cursor-pointer transform hover:-translate-y-1" style={{borderLeftColor: CHART_COLORS[idx % CHART_COLORS.length]}}>
-                        <p className="font-black text-lg text-slate-800">{c.name}</p>
-                        <p className="text-xs font-bold text-slate-400 mt-2 flex items-center gap-1.5"><Icon name="phone" size={12}/> {c.phone}</p>
-                        <div className="mt-4 pt-4 border-t border-slate-50"><p className="text-sm font-black text-slate-600 truncate">{c.interestedPlan || 'รอระบุแผน'}</p>{c.premium > 0 && <p className="text-sm font-black text-emerald-600 mt-2 bg-emerald-50 w-fit px-3 py-1 rounded-xl">{formatCurrency(c.premium)}</p>}</div>
-                      </div>
-                    ))}
-                    {list.length === 0 && <div className="border-2 border-dashed border-slate-300 rounded-[2rem] p-8 text-center text-slate-400 font-black">ไม่มีข้อมูล</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    // --- ANALYTICS VIEW ---
-    function AnalyticsView({ customers }) {
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+    
+    if(s.shopLogoBase64) {
+      const lg = getEl('cust-header-logo');
+      if(lg) { lg.src = s.shopLogoBase64; lg.style.display = 'block'; }
+      const lfb = getEl('cust-header-logo-fallback');
+      if(lfb) lfb.style.display = 'none';
+      const lp = getEl('set-logo-preview');
+      if(lp) { lp.src = s.shopLogoBase64; lp.classList.remove('hidden'); }
       
-      const closedThisMonth = customers.filter(c => c.status === 'ปิดการขาย' && c.closedDate && new Date(c.closedDate).getMonth() === currentMonth);
-      const revThisMonth = closedThisMonth.reduce((acc, c) => acc + Number(c.premium||0), 0);
-      const avgCase = closedThisMonth.length ? Math.round(revThisMonth / closedThisMonth.length) : 0;
-      const convRate = customers.length ? Math.round((customers.filter(c=>c.status==='ปิดการขาย').length / customers.length)*100) : 0;
-
-      const closedThisYear = customers.filter(c => c.status === 'ปิดการขาย' && c.closedDate && new Date(c.closedDate).getFullYear() === currentYear);
-      const revThisYear = closedThisYear.reduce((acc, c) => acc + Number(c.premium||0), 0);
-
-      const monthlyData = new Array(12).fill(0);
-      closedThisYear.forEach(c => { monthlyData[new Date(c.closedDate).getMonth()] += Number(c.premium||0); });
-      const bestMonthVal = Math.max(...monthlyData);
-      const bestMonthIndex = monthlyData.indexOf(bestMonthVal);
-      const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      const bestMonthName = bestMonthVal > 0 ? monthNames[bestMonthIndex] : '-';
-
-      const prevMonthRev = currentMonth > 0 ? monthlyData[currentMonth - 1] : 0;
-      let growth = 0;
-      if(prevMonthRev > 0) growth = Math.round(((revThisMonth - prevMonthRev) / prevMonthRev) * 100);
-      else if (revThisMonth > 0) growth = 100;
-
-      const kpis = [
-        { title: 'รายได้เดือนนี้', val: formatCurrency(revThisMonth), color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-        { title: 'รายได้รวมทั้งปี', val: formatCurrency(revThisYear), color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-        { title: 'เคสที่ปิดได้ (ด)', val: `${closedThisMonth.length} เคส`, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-        { title: 'เฉลี่ยต่อเคส (ด)', val: formatCurrency(avgCase), color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
-        { title: 'Conversion Rate', val: `${convRate}%`, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
-        { title: 'Best Month', val: bestMonthName, color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
-        { title: 'Growth (YoM)', val: `${growth > 0 ? '+'+growth : growth}%`, color: growth >= 0 ? 'text-emerald-600' : 'text-red-600', bg: growth >= 0 ? 'bg-emerald-50' : 'bg-red-50', border: growth >= 0 ? 'border-emerald-100' : 'border-red-100' },
-      ];
-
-      const chartData = STATUS_LIST.map(s => ({ name: s, count: customers.filter(c=>c.status===s).length }));
-
-      return (
-        <div className="space-y-10">
-          <div><h2 className="text-4xl font-black text-slate-800 flex items-center gap-3"><Icon name="trend-up" className="text-pink-500" size={40}/> Analytics & KPI</h2><p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-sm">วิเคราะห์ผลงาน สถิติรายได้ และการเติบโตของคุณ</p></div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-            {kpis.map((k,i) => (
-              <div key={i} className={`p-6 md:p-8 rounded-[2.5rem] border-2 ${k.border} ${k.bg} shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1`}>
-                <p className="text-[10px] md:text-xs font-black text-slate-500 mb-2 md:mb-3 uppercase tracking-widest">{k.title}</p>
-                <h3 className={`text-2xl md:text-4xl font-black ${k.color}`}>{k.val}</h3>
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-            <h3 className="font-black text-slate-800 mb-2 text-2xl">จำนวนลูกค้าในแต่ละขั้นตอน</h3>
-            <CSSBarChart data={chartData} />
-          </div>
-        </div>
-      );
+      const logImg = getEl('login-logo-img');
+      if(logImg) { logImg.src = s.shopLogoBase64; logImg.style.display = 'block'; }
+      const logFb = getEl('login-logo-fallback');
+      if(logFb) logFb.style.display = 'none';
     }
 
-    // --- TEAM RANKING VIEW ---
-    function RankingView({ users, customers, currentUser }) {
-      const ranking = users.filter(u => u.role === 'agent' && u.team === currentUser.team).map(u => {
-        const rev = customers.filter(c => c.agent_id === u.id && c.status === 'ปิดการขาย').reduce((acc,c)=>acc+Number(c.premium||0),0);
-        return { ...u, rev };
-      }).sort((a,b) => b.rev - a.rev);
-
-      return (
-        <div className="max-w-4xl mx-auto space-y-10">
-          <div className="text-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-yellow-300 to-orange-400 text-white rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-yellow-500/40 transform rotate-3"><Icon name="trophy" size={48}/></div>
-            <h2 className="text-4xl font-black text-slate-800">Team Ranking</h2>
-            <p className="text-slate-500 font-bold mt-2 text-sm uppercase tracking-widest bg-slate-200 inline-block px-4 py-1 rounded-full">ทีม: {currentUser.team}</p>
-          </div>
-          <div className="bg-white rounded-[3rem] shadow-xl p-10">
-            {ranking.map((u, idx) => (
-              <div key={u.id} className={`flex items-center justify-between p-6 mb-5 rounded-3xl border-2 transition-all hover:-translate-y-1 hover:shadow-lg ${idx === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200' : 'bg-slate-50 border-slate-100'}`}>
-                <div className="flex items-center gap-6">
-                  <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl ${idx === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg shadow-yellow-500/40' : idx === 1 ? 'bg-slate-200 text-slate-500' : idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>{idx + 1}</div>
-                  <div><p className="font-black text-slate-800 text-2xl">{u.name} {u.id === currentUser.id && <span className="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full ml-3 shadow-sm align-middle uppercase tracking-widest">คุณ</span>}</p></div>
-                </div>
-                <h3 className={`text-3xl font-black ${idx === 0 ? 'text-orange-600' : 'text-slate-700'}`}>{formatCurrency(u.rev)}</h3>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+    if(s.qrBase64) {
+      const qg = getEl('cust-qr-img');
+      if(qg) { qg.src = s.qrBase64; qg.style.display = 'block'; }
+      const qfb = getEl('cust-qr-placeholder');
+      if(qfb) qfb.style.display = 'none';
+      const qp = getEl('set-qr-preview');
+      if(qp) { qp.src = s.qrBase64; qp.classList.remove('hidden'); }
     }
 
-    // --- FUNCTIONAL AI ASSISTANT VIEW ---
-    function AIAssistantView() {
-      const [inputText, setInputText] = useState('');
-      const [messages, setMessages] = useState([]);
-      const [isLoading, setIsLoading] = useState(false);
-      const messagesEndRef = useRef(null);
+    setVal('set-shopname', s.shopName ? s.shopName : '');
+    setVal('set-phone', s.phone ? s.phone : '');
+    setVal('set-line-id', s.lineId ? s.lineId : '');
+    setVal('set-line-link', s.lineLink ? s.lineLink : '');
+    setVal('set-bankname', s.bankName ? s.bankName : '');
+    setVal('set-bankaccname', s.bankAccName ? s.bankAccName : '');
+    setVal('set-bankaccno', s.bankAccNo ? s.bankAccNo : '');
+  };
 
-      const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      };
+  window.saveSettings = () => {
+    showLoading(true);
+    const newData = {
+      shopName: getVal('set-shopname'),
+      phone: getVal('set-phone'),
+      lineId: getVal('set-line-id'),
+      lineLink: getVal('set-line-link'),
+      bankName: getVal('set-bankname'),
+      bankAccName: getVal('set-bankaccname'),
+      bankAccNo: getVal('set-bankaccno'),
+      tgToken: "8731749401:AAEmA6wiK5o4NM0CcjJnmgt_827PbyMtPYw", // FIXED
+      tgChatId: getVal('set-tg-chatid')
+    };
+    
+    const qrInput = getEl('set-qr-code');
+    if(qrInput && qrInput.dataset && qrInput.dataset.base64) newData.qrBase64 = qrInput.dataset.base64;
 
-      useEffect(() => {
-        scrollToBottom();
-      }, [messages, isLoading]);
+    const logoInput = getEl('set-shop-logo');
+    if(logoInput && logoInput.dataset && logoInput.dataset.base64) newData.shopLogoBase64 = logoInput.dataset.base64;
 
-      const handleSend = async () => {
-        if (!inputText.trim() || isLoading) return;
+    window.appState.settings = {...(window.appState.settings||{}), ...newData};
+    try { localStorage.setItem('cache_settings', JSON.stringify(window.appState.settings)); } catch(e){}
+    updateSettingsUI();
 
-        const userMsg = inputText.trim();
-        setInputText('');
-        setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-        setIsLoading(true);
+    safeSetDoc(getDocRef('settings', 'global'), newData, {merge:true});
+    
+    showToast("บันทึกการตั้งค่าสำเร็จ");
+    setTimeout(() => { showLoading(false); }, 200);
+  };
 
-        try {
-          const apiKey = "AIzaSyDbHog1AJB9nmrPvQtBefDIeF-uy_y4XjU"; // API Key ที่ระบุ
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-          
-          const payload = {
-            contents: [{ parts: [{ text: userMsg }] }],
-            systemInstruction: {
-              parts: [{ text: "คุณคือ AI ผู้ช่วยสำหรับตัวแทนขายประกันภัยในระบบ IA CRM ให้คำแนะนำเกี่ยวกับการปิดการขาย สร้างสคริปต์การโทร ตอบข้อโต้แย้ง และวิเคราะห์ข้อมูลลูกค้า ตอบเป็นภาษาไทยด้วยความสุภาพ มืออาชีพ และกระชับเข้าใจง่าย ใช้ Markdown ในการจัดรูปแบบข้อความให้สวยงามได้" }]
-            }
-          };
-
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            throw new Error(data.error?.message || 'API Error');
-          }
-          
-          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'ขออภัย ไม่สามารถประมวลผลได้ในขณะนี้';
-          
-          setMessages(prev => [...prev, { role: 'model', text: reply }]);
-        } catch (error) {
-          console.error("AI Error:", error);
-          setMessages(prev => [...prev, { role: 'model', text: 'ขออภัย ระบบ AI ไม่สามารถตอบกลับได้ในขณะนี้ โปรดลองใหม่อีกครั้งในภายหลังครับ' }]);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      const formatMessage = (text) => {
-          return { __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
-      };
-
-      return (
-        <div className="max-w-4xl mx-auto space-y-8 flex flex-col h-[calc(100vh-160px)]">
-          <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 rounded-[3rem] p-8 lg:p-12 shadow-2xl text-white relative overflow-hidden flex flex-col flex-1 min-h-0 border border-indigo-500/20">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -mt-40 -mr-40 pointer-events-none"></div>
-            
-            {messages.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center relative z-10 animate-in fade-in zoom-in duration-500">
-                    <Icon name="brain" size={80} className="mx-auto mb-8 text-indigo-300 animate-pulse drop-shadow-[0_0_15px_rgba(165,180,252,0.5)]" />
-                    <h2 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight">IA AI Assistant</h2>
-                    <p className="text-indigo-200 font-bold text-lg max-w-xl mx-auto leading-relaxed">พิมพ์ปรึกษา AI ผู้ช่วยได้เลย! <br/>เช่น "ขอสคริปต์โทรหาลูกค้าเก่า", "วิธีตอบข้อโต้แย้งเรื่องเบี้ยแพง", หรือ "ช่วยคิดแผนประกันสำหรับคนอายุ 30"</p>
-                </div>
-            ) : (
-                <div className="flex-1 overflow-y-auto mb-6 pr-2 space-y-6 custom-scrollbar relative z-10">
-                    {messages.map((msg, idx) => (
-                        <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
-                            <div className={`max-w-[85%] p-5 rounded-3xl ${msg.role === 'user' ? 'bg-indigo-500 text-white rounded-br-sm shadow-md' : 'bg-white/10 text-indigo-50 rounded-bl-sm border border-white/10 backdrop-blur-md shadow-inner'}`}>
-                                {msg.role === 'model' && <Icon name="sparkle" className="text-indigo-300 mb-2" size={20}/>}
-                                <p className="whitespace-pre-wrap font-medium leading-relaxed" dangerouslySetInnerHTML={formatMessage(msg.text)}></p>
-                            </div>
-                        </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex flex-col items-start">
-                            <div className="max-w-[85%] p-4 rounded-3xl bg-white/10 text-indigo-50 rounded-bl-sm border border-white/10 backdrop-blur-md flex items-center gap-3">
-                                <Icon name="circle-notch" className="animate-spin text-indigo-300" size={20} />
-                                <span className="font-bold text-indigo-200">AI กำลังวิเคราะห์ข้อมูล...</span>
-                            </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-            )}
-
-            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="mt-auto bg-white/10 p-3 rounded-3xl flex flex-col md:flex-row gap-3 backdrop-blur-xl border border-white/20 relative z-10 shadow-inner shrink-0">
-              <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} disabled={isLoading} placeholder="พิมพ์ข้อความปรึกษา AI ที่นี่..." className="flex-1 bg-transparent border-none text-white outline-none placeholder-indigo-300/70 font-bold px-5 py-3" />
-              <button type="submit" disabled={isLoading || !inputText.trim()} className="bg-indigo-500 px-8 py-3 rounded-2xl font-black hover:bg-indigo-400 shadow-lg transition text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                ส่ง <Icon name="paper-plane-right" weight="fill" />
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADMIN HOME VIEW ---
-    function AdminHomeView({ users, customers, showToast }) {
-      const agents = users.filter(u => u.role === 'agent');
-      const closedCases = customers.filter(c => c.status === 'ปิดการขาย');
-      const totalRev = closedCases.reduce((acc, c) => acc + Number(c.premium||0), 0);
-
-      const testGroupTelegram = async () => {
-        try {
-            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: TELEGRAM_CHAT_ID,
-                    text: `📢 <b>ทดสอบระบบแจ้งเตือนห้องรวม</b>\nผู้ดูแลระบบกำลังทดสอบระบบแจ้งเตือน IA CRM ฝั่ง Admin\nสถานะการเชื่อมต่อ: <b>สำเร็จ! ✅</b>`,
-                    parse_mode: "HTML"
-                })
-            });
-            const data = await res.json();
-            if(data.ok) {
-                showToast('ส่งแจ้งเตือนห้องรวมสำเร็จ!');
-            } else {
-                alert(`ส่งไม่สำเร็จ: ${data.description}`);
-            }
-        } catch(e) {
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ Telegram API');
-        }
-      };
-
-      return (
-        <div className="space-y-10">
-          <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl -mt-40 -mr-40 pointer-events-none"></div>
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative z-10 gap-4 mb-3">
-                <div>
-                    <h2 className="text-5xl font-black">Admin Dashboard</h2>
-                    <p className="text-purple-200 font-bold uppercase tracking-widest text-sm mt-2">หน้าต่างสรุปผลสำหรับผู้บริหาร</p>
-                </div>
-                <button onClick={testGroupTelegram} className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-6 py-3 rounded-xl font-black text-sm transition flex items-center gap-2 border border-white/30 shadow-lg">
-                    <Icon name="telegram-logo" size={20} /> ทดสอบแจ้งเตือนห้องรวม
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 relative z-10">
-              <div className="bg-white/10 p-8 rounded-[2rem] border border-white/20 backdrop-blur-md shadow-lg"><p className="text-purple-200 text-xs font-black mb-2 uppercase tracking-widest">ยอดขายรวมบริษัท</p><h3 className="text-5xl font-black text-amber-400">{formatCurrency(totalRev)}</h3></div>
-              <div className="bg-white/10 p-8 rounded-[2rem] border border-white/20 backdrop-blur-md shadow-lg"><p className="text-purple-200 text-xs font-black mb-2 uppercase tracking-widest">ตัวแทนทั้งหมด</p><h3 className="text-5xl font-black text-blue-300">{agents.length} <span className="text-2xl font-bold">คน</span></h3></div>
-              <div className="bg-white/10 p-8 rounded-[2rem] border border-white/20 backdrop-blur-md shadow-lg"><p className="text-purple-200 text-xs font-black mb-2 uppercase tracking-widest">ฐานลูกค้ารวมทั้งหมด</p><h3 className="text-5xl font-black text-emerald-400">{customers.length} <span className="text-2xl font-bold">ราย</span></h3></div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 p-10">
-            <h3 className="font-black text-slate-800 text-3xl mb-8 flex items-center gap-3"><Icon name="users" className="text-blue-500"/> รายชื่อตัวแทน (Agents)</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest"><tr><th className="px-6 py-5 rounded-l-2xl">ชื่อตัวแทน</th><th className="px-6 py-5">ทีม</th><th className="px-6 py-5">เป้าหมาย (รายเดือน)</th><th className="px-6 py-5 rounded-r-2xl text-center">ลูกค้าที่ดูแล</th></tr></thead>
-                <tbody className="divide-y divide-slate-50">
-                  {agents.map(a => (
-                    <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-6 font-black text-slate-800 text-lg">{a.name}</td>
-                      <td className="px-6 py-6"><span className="px-4 py-1.5 bg-purple-100 text-purple-700 rounded-xl font-black text-xs uppercase tracking-widest">{a.team}</span></td>
-                      <td className="px-6 py-6 font-black text-orange-600 text-lg">{formatCurrency(a.targetRevenue)}</td>
-                      <td className="px-6 py-6 font-black text-blue-600 text-xl text-center">{customers.filter(c=>c.agent_id===a.id).length}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function AdminCustomersView({ customers, users, updateCustomer, deleteCustomer }) {
-      const [search, setSearch] = useState('');
-      const [selectedCustomer, setSelectedCustomer] = useState(null); 
-
-      const filtered = customers.filter(c => (c.name || '').toLowerCase().includes(search.toLowerCase()) || (c.phone || '').includes(search));
-
-      return (
-        <div className="space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div><h2 className="text-4xl font-black text-slate-800 flex items-center gap-3"><Icon name="database" className="text-emerald-500" size={40}/> ฐานข้อมูลรวม (Admin)</h2></div>
-            <div className="w-full md:w-96 relative"><Icon name="magnifying-glass" className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} /><input type="text" placeholder="ค้นหาชื่อ, เบอร์โทร..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full pl-14 pr-5 py-4 border-2 border-slate-200 rounded-2xl outline-none font-bold focus:border-emerald-500" /></div>
-          </div>
-          <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden p-6">
-            <table className="w-full text-left whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest">
-                <tr>
-                  <th className="px-6 py-5 rounded-l-2xl">ชื่อลูกค้า</th>
-                  <th className="px-6 py-5">เบอร์โทร</th>
-                  <th className="px-6 py-5">สถานะ</th>
-                  <th className="px-6 py-5">ตัวแทนผู้ดูแล</th>
-                  <th className="px-6 py-5 text-right">ยอดเบี้ย (ถ้ามี)</th>
-                  <th className="px-6 py-5 text-center rounded-r-2xl">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map(c => {
-                  const agent = users.find(u => u.id === c.agent_id);
-                  return (
-                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-5 font-black text-slate-800">{c.name}</td>
-                      <td className="px-6 py-5 text-slate-500 font-bold">{c.phone}</td>
-                      <td className="px-6 py-5"><span className="px-3 py-1.5 rounded-xl text-xs font-black border-2">{c.status}</span></td>
-                      <td className="px-6 py-5 text-blue-600 font-black">{agent ? agent.name : 'Unknown'}</td>
-                      <td className="px-6 py-5 text-right font-black text-emerald-600">{formatCurrency(c.premium)}</td>
-                      <td className="px-6 py-5 text-center">
-                        <button onClick={() => setSelectedCustomer(c)} className="text-blue-500 hover:bg-blue-100 bg-blue-50 px-4 py-2 rounded-xl font-black transition flex items-center gap-2 mx-auto text-xs">
-                          <Icon name="eye" size={16}/> ดูข้อมูล
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {selectedCustomer && <CustomerModal customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} onSave={updateCustomer} onDelete={deleteCustomer} />}
-        </div>
-      );
-    }
-
-    function SettingsView({ user, handleUpdateUser, showToast }) {
-      const [formData, setFormData] = useState({ 
-        name: user.name, 
-        email: user.email || '',
-        password: user.password || '',
-        team: user.team || '',
-        targetRevenue: user.targetRevenue || 100000,
-        telegramChatId: user.telegramChatId || '' 
+  const sendTgMsg = async (text) => {
+    const s = window.appState.settings || {};
+    if(!s.tgToken || !s.tgChatId) return;
+    try {
+      await fetch(`https://api.telegram.org/bot${s.tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ chat_id: s.tgChatId, text: text, parse_mode: 'HTML' })
       });
+    } catch(e) { console.log('TG Error:', e); }
+  };
 
-      const testTelegramNotification = async () => {
-        const testChatId = formData.telegramChatId || TELEGRAM_CHAT_ID;
-        try {
-            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: testChatId,
-                    text: `✅ <b>ทดสอบระบบแจ้งเตือน</b>\nIA CRM สามารถส่งข้อความหาคุณได้สำเร็จแล้วครับ!`,
-                    parse_mode: "HTML"
-                })
-            });
-            const data = await res.json();
-            if(data.ok) {
-                showToast('ส่งข้อความทดสอบสำเร็จ! เช็คใน Telegram ได้เลย');
-            } else {
-                alert(`ส่งไม่สำเร็จ!\n\nสาเหตุ: ${data.description}\n\nวิธีแก้: คุณต้องไปค้นหาบอทใน Telegram และกดปุ่ม /start เพื่อทักหาบอทก่อน 1 ครั้งครับ`);
-            }
-        } catch(e) {
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ Telegram API');
-        }
-      };
+  window.testTelegram = () => {
+    showToast("กำลังส่งข้อความทดสอบ...");
+    sendTgMsg("🔔 ข้อความทดสอบจากระบบออมทองพรีเมียม");
+  };
 
-      return (
-        <div className="max-w-2xl mx-auto p-12 bg-white rounded-[3rem] shadow-sm border border-slate-100 text-center">
-          <Icon name="gear" size={64} className="mx-auto text-slate-300 mb-6"/>
-          <h2 className="text-3xl font-black mb-8">ตั้งค่าโปรไฟล์</h2>
-          <div className="space-y-6 text-left">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><label className="text-xs font-black block mb-2 text-slate-400">อีเมล (ใช้เข้าระบบ)</label><input type="email" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} className="w-full border-2 rounded-xl px-5 py-4 font-bold outline-none focus:border-blue-500"/></div>
-                <div><label className="text-xs font-black block mb-2 text-slate-400">รหัสผ่าน</label><input type="text" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} className="w-full border-2 rounded-xl px-5 py-4 font-bold outline-none focus:border-blue-500"/></div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><label className="text-xs font-black block mb-2 text-slate-400">ชื่อ - นามสกุล</label><input type="text" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full border-2 rounded-xl px-5 py-4 font-bold outline-none focus:border-blue-500"/></div>
-                <div><label className="text-xs font-black block mb-2 text-slate-400">ชื่อทีม</label><input type="text" value={formData.team} onChange={e=>setFormData({...formData, team: e.target.value})} className="w-full border-2 rounded-xl px-5 py-4 font-bold outline-none focus:border-blue-500"/></div>
-            </div>
-
-            {user.role === 'agent' && (
-              <div><label className="text-xs font-black block mb-2 text-slate-400">เป้ายอดขายต่อเดือน</label><input type="number" value={formData.targetRevenue} onChange={e=>setFormData({...formData, targetRevenue: Number(e.target.value)})} className="w-full border-2 rounded-xl px-5 py-4 font-bold outline-none focus:border-blue-500"/></div>
-            )}
-
-            <div>
-              <label className="text-xs font-black block mb-2 text-slate-400">Chat ID (สำหรับการแจ้งเตือน)</label>
-              <div className="flex gap-2">
-                <input type="text" placeholder="เช่น 123456789" value={formData.telegramChatId} onChange={e=>setFormData({...formData, telegramChatId: e.target.value})} className="flex-1 border-2 rounded-xl px-5 py-4 font-bold outline-none focus:border-blue-500"/>
-                <button type="button" onClick={testTelegramNotification} className="bg-blue-100 text-blue-600 px-6 rounded-xl font-black hover:bg-blue-200 transition">ทดสอบส่ง</button>
-              </div>
-            </div>
-
-            <button onClick={() => { handleUpdateUser({...user, ...formData}); showToast('บันทึกการตั้งค่าโปรไฟล์เรียบร้อย!'); }} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-lg hover:bg-slate-800 transition mt-4">บันทึกการเปลี่ยนแปลง</button>
-          </div>
-        </div>
-      );
+  window.exportData = (type) => {
+    let data = window.appState[type];
+    if(!data || data.length === 0) return showToast("ไม่มีข้อมูลให้ Export", true);
+    
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    if(type === 'users') {
+      csvContent += "Name,Phone,Role,Balance\n";
+      data.forEach(u => { 
+        let b = u.balance ? u.balance : 0;
+        csvContent += `"${u.name}","${u.phone}","${u.role}","${b}"\n`; 
+      });
+    } else {
+      csvContent += "Date,UserName,Type,Amount,Status,Remark\n";
+      data.forEach(t => { 
+        let d = new Date(t.date).toLocaleString('th-TH');
+        let amt = t.amount ? t.amount : 0;
+        let rm = t.remark ? t.remark : '';
+        csvContent += `"${d}","${t.userName}","${t.type}","${amt}","${t.status}","${rm}"\n`; 
+      });
     }
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `export_${type}_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<NovaCRMApp />);
-  </script>
+  window.backupToTelegram = async () => {
+    showLoading(true);
+    let userCount = window.appState.users ? window.appState.users.length : 0;
+    
+    let totalBal = 0;
+    if(window.appState.users) {
+       for(let i=0; i<window.appState.users.length; i++){
+          totalBal += (window.appState.users[i].balance ? window.appState.users[i].balance : 0);
+       }
+    }
+    
+    let txCount = window.appState.transactions ? window.appState.transactions.length : 0;
+    
+    let msg = `📦 <b>Weekly Backup Report</b>\n` +
+              `วันที่: ${new Date().toLocaleString('th-TH')}\n\n` +
+              `👥 จำนวนสมาชิกรวม: ${userCount}\n` +
+              `💰 ยอดเงินออมในระบบรวม: ฿${totalBal.toLocaleString()}\n` +
+              `📋 จำนวนธุรกรรมทั้งหมด: ${txCount}\n\n` +
+              `<i>หมายเหตุ: แอดมินสามารถโหลดข้อมูลแบบละเอียด(Excel) ได้จากระบบหลังบ้าน</i>`;
+    
+    await sendTgMsg(msg);
+    try { localStorage.setItem('goldAppLastBackup', Date.now().toString()); } catch(e){}
+    showToast("ส่ง Backup เข้า Telegram สำเร็จ");
+    setTimeout(() => { showLoading(false); }, 200);
+  };
+
+  const checkAndRunBackup = () => {
+    let last = null;
+    try { last = localStorage.getItem('goldAppLastBackup'); } catch(e){}
+    const now = Date.now();
+    if(!last || (now - parseInt(last)) > 604800000) {
+       backupToTelegram();
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', initApp);
+
+</script>
 </body>
 </html>
